@@ -218,9 +218,11 @@ export const CONTACT = {
   /** Điện thoại bàn */
   officePhone: '(+84) 28 6271 0811',
   officePhoneHref: 'tel:+842862710811',
-  /** Hotline — dùng cho header / CTA gọi nhanh */
-  phone: '(+84) 932 383 089',
-  phoneHref: 'tel:+84932383089',
+  /** Hotline hiển thị header / CTA */
+  phone: '0932 383 089',
+  phoneHref: 'tel:0932383089',
+  /** Hotline hiển thị footer (định dạng quốc tế) */
+  hotline: '(+84) 932 383 089',
   email: 'cs@aztax.com.vn',
   hours: 'Thứ 2 - Thứ 6, 08:00 - 18:00',
   company: 'AZTAX Co., LTD',

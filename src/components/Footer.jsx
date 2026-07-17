@@ -42,7 +42,7 @@ export default function Footer() {
           </p>
           <p className="footer-contact-item">
             <span className="footer-contact-label">Hotline:</span>{' '}
-            <a href={CONTACT.phoneHref}>{CONTACT.phone}</a>
+            <a href={CONTACT.phoneHref}>{CONTACT.hotline}</a>
           </p>
           <p className="footer-contact-item">
             <span className="footer-contact-label">Email:</span>{' '}
