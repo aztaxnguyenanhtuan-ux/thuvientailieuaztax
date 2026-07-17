@@ -1,0 +1,333 @@
+:root {
+  /* Brand palette */
+  --brand: #004aad;
+  --brand-hover: #003b8e;
+  --brand-deep: #0d4ca4;
+  --footer: #06356f;
+  --navy: #004aad;
+  --navy-deep: #06356f;
+  --navy-mid: #003b8e;
+
+  --orange: #ff7a00;
+  --orange-hover: #f56a00;
+  --orange-soft: #fff4e8;
+
+  --white: #ffffff;
+  --bg: #f4f8fc;
+  --bg-alt: #eaf2fb;
+  --text: #1a2b3c;
+  --text-muted: #5a6f85;
+  --text-light: #8a9bb0;
+  --border: #d9e6f7;
+  --border-hover: #004aad;
+
+  --shadow: 0 8px 24px rgba(0, 74, 173, 0.08);
+  --shadow-hover: 0 14px 36px rgba(0, 74, 173, 0.14);
+  --shadow-lg: 0 16px 48px rgba(0, 74, 173, 0.16);
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-btn: 10px;
+  --header-h: 72px;
+  --font: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+  --transition: 0.3s ease;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.25;
+  color: var(--brand);
+  margin: 0 0 0.5em;
+  font-weight: 700;
+}
+
+.section-head h2,
+.hero-copy h1 {
+  color: var(--brand);
+}
+
+p {
+  margin: 0 0 0.75em;
+}
+
+code {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--bg-alt);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+.container {
+  width: min(1160px, calc(100% - 40px));
+  margin-inline: auto;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.text-accent {
+  color: var(--orange);
+}
+
+.req {
+  color: var(--orange);
+  margin-left: 2px;
+  display: inline;
+  line-height: inherit;
+  vertical-align: baseline;
+}
+
+/* Label text + * cùng một hàng (tránh flex column tách * xuống dòng) */
+.field-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.15em;
+  line-height: 1.3;
+}
+
+.optional {
+  color: var(--text-light);
+  font-weight: 400;
+  font-size: 0.9em;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 0.75rem;
+}
+
+.eyebrow.light {
+  color: #ffb347;
+}
+
+/* ========== BUTTONS ========== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.7rem 1.15rem;
+  border-radius: var(--radius-btn);
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition:
+    transform var(--transition),
+    background var(--transition),
+    box-shadow var(--transition),
+    border-color var(--transition),
+    color var(--transition);
+  border: 1.5px solid transparent;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Primary — blue */
+.btn-primary {
+  background: #004aad;
+  color: #fff;
+  border-color: #004aad;
+}
+
+.btn-primary:hover {
+  background: #003b8e;
+  border-color: #003b8e;
+  box-shadow: 0 8px 20px rgba(0, 74, 173, 0.28);
+}
+
+/* Secondary — orange */
+.btn-secondary,
+.btn-accent {
+  background: #ff7a00;
+  color: #fff;
+  border-color: #ff7a00;
+}
+
+.btn-secondary:hover,
+.btn-accent:hover {
+  background: #f56a00;
+  border-color: #f56a00;
+  box-shadow: 0 8px 20px rgba(255, 122, 0, 0.3);
+}
+
+.btn-outline {
+  background: #fff;
+  color: #004aad;
+  border-color: #d9e6f7;
+}
+
+.btn-outline:hover {
+  border-color: #004aad;
+  background: rgba(0, 74, 173, 0.04);
+  color: #004aad;
+}
+
+.btn-sm {
+  padding: 0.5rem 0.85rem;
+  font-size: 0.82rem;
+  border-radius: var(--radius-btn);
+}
+
+.btn-lg {
+  padding: 0.95rem 1.5rem;
+  font-size: 1rem;
+  border-radius: var(--radius-btn);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.icon-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #004aad;
+  background: var(--bg-alt);
+  transition: background var(--transition), color var(--transition), box-shadow var(--transition);
+}
+
+.icon-btn:hover {
+  background: #004aad;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(0, 74, 173, 0.25);
+}
+
+.badge-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ff7a00;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ========== TAGS / BADGES (orange accent) ========== */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tag-hot {
+  background: #ff7a00;
+  color: #fff;
+}
+
+.tag-new {
+  background: #004aad;
+  color: #fff;
+}
+
+.tag-free {
+  background: #e8f0fb;
+  color: #004aad;
+}
+
+.chip {
+  display: inline-flex;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #eaf2fb;
+  color: #004aad;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.chip-light {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.doc-type,
+.doc-year {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  font-weight: 600;
+}
