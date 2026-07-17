@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { POSITIONS } from '../../data/constants'
 import { useAuth } from '../../context/AuthContext'
 import { X } from '../icons'
+import PasswordField from './PasswordField'
 
 export default function RegisterModal() {
   const { authModal, closeAuthModal, switchToLogin, signUp } = useAuth()
@@ -116,20 +117,19 @@ export default function RegisterModal() {
             />
           </label>
 
-          <label>
-            <span className="field-label">
-              Mật khẩu<span className="req">*</span>
-            </span>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="Tối thiểu 6 ký tự"
-              autoComplete="new-password"
-              required
-              minLength={6}
-            />
-          </label>
+          <PasswordField
+            label={
+              <>
+                Mật khẩu<span className="req">*</span>
+              </>
+            }
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            placeholder="Tối thiểu 6 ký tự"
+            autoComplete="new-password"
+            required
+            minLength={6}
+          />
 
           <label>
             <span className="field-label">

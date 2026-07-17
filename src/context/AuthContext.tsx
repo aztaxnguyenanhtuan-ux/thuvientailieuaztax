@@ -23,6 +23,37 @@ import {
 
 export type AuthModalView = 'login' | 'register' | null
 
+/** Map thông báo lỗi Supabase Auth → tiếng Việt (hiển thị UI). */
+function mapAuthErrorMessage(message: string | undefined, fallback: string): string {
+  const raw = (message || '').trim()
+  if (!raw) return fallback
+  const lower = raw.toLowerCase()
+
+  if (
+    lower.includes('invalid login credentials') ||
+    lower.includes('invalid email or password')
+  ) {
+    return 'Email hoặc mật khẩu không đúng.'
+  }
+  if (lower.includes('email not confirmed')) {
+    return 'Email chưa được xác nhận. Vui lòng kiểm tra hộp thư.'
+  }
+  if (lower.includes('user already registered') || lower.includes('already been registered')) {
+    return 'Email này đã được đăng ký.'
+  }
+  if (lower.includes('password should be at least') || lower.includes('password is known')) {
+    return 'Mật khẩu không hợp lệ. Vui lòng dùng mật khẩu mạnh hơn (tối thiểu 6 ký tự).'
+  }
+  if (lower.includes('rate limit') || lower.includes('too many requests')) {
+    return 'Thao tác quá nhiều lần. Vui lòng thử lại sau.'
+  }
+  if (lower.includes('network') || lower.includes('fetch')) {
+    return 'Không kết nối được máy chủ. Kiểm tra mạng và thử lại.'
+  }
+
+  return raw
+}
+
 type AuthContextValue = {
   user: AuthProfile | null
   session: Session | null
@@ -150,7 +181,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
       })
 
-      if (error) throw new Error(error.message)
+      if (error) {
+        throw new Error(
+          mapAuthErrorMessage(error.message, 'Email hoặc mật khẩu không đúng.'),
+        )
+      }
       if (!data.session?.user) {
         throw new Error('Đăng nhập thành công nhưng không có session.')
       }
@@ -196,7 +231,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       })
 
-      if (error) throw new Error(error.message)
+      if (error) {
+        throw new Error(mapAuthErrorMessage(error.message, 'Đăng ký thất bại.'))
+      }
       if (!data.user) throw new Error('Đăng ký không thành công.')
 
       // Tạo profile role=user nếu chưa có; không ghi đè role admin đã set

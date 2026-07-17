@@ -111,7 +111,13 @@ export async function loginUser(email, password) {
     email,
     password,
   })
-  if (error) throw new Error(error.message || 'Email hoặc mật khẩu không đúng.')
+  if (error) {
+    const msg = (error.message || '').toLowerCase()
+    if (msg.includes('invalid login credentials')) {
+      throw new Error('Email hoặc mật khẩu không đúng.')
+    }
+    throw new Error(error.message || 'Email hoặc mật khẩu không đúng.')
+  }
   const profile = await fetchProfile(data.user.id)
   return mapProfile(data.user, profile)
 }
