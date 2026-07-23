@@ -21,7 +21,7 @@ import {
   fetchProfileFromDb,
 } from '../services/profile'
 
-export type AuthModalView = 'login' | 'register' | null
+export type AuthModalView = 'login' | 'register' | 'reset-password' | null
 
 /** Map thông báo lỗi Supabase Auth → tiếng Việt (hiển thị UI). */
 function mapAuthErrorMessage(message: string | undefined, fallback: string): string {
@@ -76,6 +76,8 @@ type AuthContextValue = {
     position?: string
     phone?: string
   }) => Promise<void>
+  resetPassword: (email: string) => Promise<void>
+  updatePassword: (newPassword: string) => Promise<void>
   signOut: () => Promise<void>
   /** Force reload profile từ DB (role, tên…) */
   refreshProfile: () => Promise<void>
@@ -156,6 +158,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (import.meta.env.DEV) {
         console.info('[auth] onAuthStateChange', event)
+      }
+
+      if (event === 'PASSWORD_RECOVERY') {
+        setAuthModal('reset-password')
       }
 
       window.setTimeout(() => {
@@ -255,6 +261,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [applySession],
   )
 
+  const resetPassword = useCallback(async (email: string) => {
+    if (!supabase) {
+      throw new Error('Supabase chưa được cấu hình. Kiểm tra file .env')
+    }
+
+    const targetEmail = email.trim().toLowerCase()
+
+    // Gửi mail đặt lại mật khẩu trực tiếp qua Supabase Auth
+    const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
+      redirectTo: `${window.location.origin}/`,
+    })
+    if (error) {
+      throw new Error(
+        mapAuthErrorMessage(error.message, 'Không gửi được email khôi phục mật khẩu.'),
+      )
+    }
+  }, [])
+
+  const updatePassword = useCallback(async (newPassword: string) => {
+    if (!supabase) {
+      throw new Error('Supabase chưa được cấu hình. Kiểm tra file .env')
+    }
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    })
+    if (error) {
+      throw new Error(
+        mapAuthErrorMessage(error.message, 'Không cập nhật được mật khẩu mới.'),
+      )
+    }
+    setAuthModal(null)
+  }, [])
+
   const signOut = useCallback(async () => {
     if (supabase) {
       const { error } = await supabase.auth.signOut()
@@ -280,10 +319,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       switchToRegister: () => setAuthModal('register'),
       signIn,
       signUp,
+      resetPassword,
+      updatePassword,
       signOut,
       refreshProfile,
     }),
-    [user, session, loading, authModal, signIn, signUp, signOut, refreshProfile],
+    [
+      user,
+      session,
+      loading,
+      authModal,
+      signIn,
+      signUp,
+      resetPassword,
+      updatePassword,
+      signOut,
+      refreshProfile,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

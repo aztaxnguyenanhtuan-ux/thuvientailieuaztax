@@ -201,12 +201,24 @@ export function normalizeInfographic(row: Record<string, unknown>): InfographicI
   }
 }
 
+let infographicsCache: InfographicItem[] | null = null
+let infoCacheTimestamp = 0
+const INFO_CACHE_TTL = 300000 // 5 phút cache
+
+export function clearInfographicsCache() {
+  infographicsCache = null
+  infoCacheTimestamp = 0
+}
+
 /**
  * Lấy danh sách infographic chỉ từ Supabase.
- * Không dùng JSON local / CMS override.
- * Bảng trống → mảng rỗng.
+ * Có bộ nhớ đệm (memory cache) giúp tải tức thì (0ms) khi xem/lọc.
  */
-export async function fetchInfographics(): Promise<InfographicItem[]> {
+export async function fetchInfographics(forceRefresh = false): Promise<InfographicItem[]> {
+  if (!forceRefresh && infographicsCache && Date.now() - infoCacheTimestamp < INFO_CACHE_TTL) {
+    return infographicsCache
+  }
+
   if (!isSupabaseConfigured || !supabase) {
     throw new Error('Supabase chưa được cấu hình. Không thể tải infographic.')
   }
@@ -233,5 +245,8 @@ export async function fetchInfographics(): Promise<InfographicItem[]> {
     console.info(`[infographics] loaded ${data.length} rows from Supabase`)
   }
 
-  return (data as Record<string, unknown>[]).map(normalizeInfographic)
+  const normalized = (data as unknown as Record<string, unknown>[]).map(normalizeInfographic)
+  infographicsCache = normalized
+  infoCacheTimestamp = Date.now()
+  return normalized
 }

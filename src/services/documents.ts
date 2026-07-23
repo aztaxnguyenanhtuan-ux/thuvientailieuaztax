@@ -20,6 +20,7 @@ const DOCUMENT_COLUMNS = [
   'icon',
   'view_preview_url',
   'direct_download_url',
+  'storage_path',
   'created_at',
 ] as const
 
@@ -90,6 +91,46 @@ function asStringArray(value: unknown): string[] {
   return []
 }
 
+/**
+ * Tự động chuyển đổi `storage_path` hoặc relative path từ Supabase Storage
+ * thành Public URL hoàn chỉnh (ví dụ: https://...supabase.co/storage/v1/object/public/documents/file.pdf).
+ */
+export function resolveSupabaseStorageUrl(rawUrl: string, defaultBucket = 'documents'): string {
+  if (!rawUrl || rawUrl === '#') return '#'
+  const s = rawUrl.trim()
+  if (!s || s === '#') return '#'
+
+  // 1. Nếu đã là URL đầy đủ (http://, https://), giữ nguyên
+  if (/^https?:\/\//i.test(s)) {
+    if (s.includes('drive.google.com/file/d/')) {
+      return s.replace(/\/view(\?.*)?$/, '/preview')
+    }
+    return s
+  }
+
+  // 2. Nếu là path trong Supabase Storage
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
+
+  if (s.includes('storage/v1/object/public/')) {
+    const cleanPath = s.replace(/^\/?/, '')
+    return supabaseUrl ? `${supabaseUrl}/${cleanPath}` : s
+  }
+
+  let cleanPath = s.replace(/^\//, '')
+  if (cleanPath.startsWith(`${defaultBucket}/`)) {
+    cleanPath = cleanPath.substring(defaultBucket.length + 1)
+  }
+
+  if (supabase && isSupabaseConfigured) {
+    const { data } = supabase.storage.from(defaultBucket).getPublicUrl(cleanPath)
+    if (data?.publicUrl) return data.publicUrl
+  }
+
+  return supabaseUrl
+    ? `${supabaseUrl}/storage/v1/object/public/${defaultBucket}/${cleanPath}`
+    : s
+}
+
 /** Map 1 row Supabase/CSV → DocumentItem UI */
 export function normalizeDocument(row: DocumentRow): DocumentItem {
   const id = asString(pick(row, 'id', 'document_id', 'slug'), '')
@@ -117,6 +158,16 @@ export function normalizeDocument(row: DocumentRow): DocumentItem {
     badgeTags.push('Popular')
   }
 
+  // Tự động nhận diện view_preview_url hoặc storage_path từ Supabase
+  const rawPreview = asString(
+    pick(row, 'storage_path', 'view_preview_url', 'preview_url', 'preview_path', 'preview'),
+    '#',
+  )
+  const rawDownload = asString(
+    pick(row, 'direct_download_url', 'download_url', 'file_url', 'storage_path', 'url'),
+    '#',
+  )
+
   return {
     id: id || `doc-${Math.random().toString(36).slice(2, 9)}`,
     type,
@@ -126,14 +177,8 @@ export function normalizeDocument(row: DocumentRow): DocumentItem {
     description: asString(pick(row, 'description', 'desc', 'summary', 'mo_ta')),
     thumbnail_url: asString(pick(row, 'thumbnail_url', 'thumbnail', 'image_url')),
     icon: asString(pick(row, 'icon', 'icon_name'), 'file-text'),
-    view_preview_url: asString(
-      pick(row, 'view_preview_url', 'preview_url', 'preview'),
-      '#',
-    ),
-    direct_download_url: asString(
-      pick(row, 'direct_download_url', 'download_url', 'file_url', 'url'),
-      '#',
-    ),
+    view_preview_url: resolveSupabaseStorageUrl(rawPreview, 'documents'),
+    direct_download_url: resolveSupabaseStorageUrl(rawDownload, 'documents'),
     year,
     featured,
     popular,
@@ -177,12 +222,24 @@ export function getFeaturedDocuments(
     .slice(0, Math.max(0, limit))
 }
 
+let documentsCache: DocumentItem[] | null = null
+let cacheTimestamp = 0
+const CACHE_TTL = 300000 // 5 phút cache
+
+export function clearDocumentsCache() {
+  documentsCache = null
+  cacheTimestamp = 0
+}
+
 /**
  * Lấy danh sách tài liệu chỉ từ Supabase `documents`.
- * Không dùng JSON local, CMS override, hay bất kỳ fallback mẫu nào.
- * Bảng trống → trả về mảng rỗng.
+ * Có bộ nhớ đệm (memory cache) giúp tải tức thì (0ms) khi chuyển trang.
  */
-export async function fetchDocuments(): Promise<DocumentItem[]> {
+export async function fetchDocuments(forceRefresh = false): Promise<DocumentItem[]> {
+  if (!forceRefresh && documentsCache && Date.now() - cacheTimestamp < CACHE_TTL) {
+    return documentsCache
+  }
+
   if (!isSupabaseConfigured || !supabase) {
     throw new Error('Supabase chưa được cấu hình. Không thể tải tài liệu.')
   }
@@ -200,7 +257,7 @@ export async function fetchDocuments(): Promise<DocumentItem[]> {
       .order('year', { ascending: false })
 
     if (!first.error) {
-      data = (first.data as DocumentRow[]) || []
+      data = (first.data as unknown as DocumentRow[]) || []
     } else if (/priority/i.test(first.error.message)) {
       if (import.meta.env.DEV) {
         console.info(
@@ -218,7 +275,7 @@ export async function fetchDocuments(): Promise<DocumentItem[]> {
         errorMessage = second.error.message
         console.error('[documents] Supabase error:', second.error.message, second.error)
       } else {
-        data = (second.data as DocumentRow[]) || []
+        data = (second.data as unknown as DocumentRow[]) || []
       }
     } else {
       errorMessage = first.error.message
@@ -241,7 +298,10 @@ export async function fetchDocuments(): Promise<DocumentItem[]> {
     console.info(`[documents] loaded ${data.length} rows from Supabase`)
   }
 
-  return data.map(normalizeDocument)
+  const normalized = data.map(normalizeDocument)
+  documentsCache = normalized
+  cacheTimestamp = Date.now()
+  return normalized
 }
 
 /** Lấy 1 tài liệu theo id */

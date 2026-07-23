@@ -1,7 +1,7 @@
-import { useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import DocumentCard from '../components/DocumentCard'
-import { getCategoryLabel } from '../data/constants'
+import { getCategoryLabel, canonicalCategory } from '../data/constants'
 import { useApp } from '../context/AppContext'
 import { useDocuments } from '../hooks/useData'
 import {
@@ -16,12 +16,25 @@ import { DocIcon } from '../components/icons'
 export default function DocumentDetail() {
   const { id } = useParams()
   const { documents, loading } = useDocuments()
-  const { savedIds, toggleSave, requestDownload } = useApp()
-
+  const { savedIds, toggleSave, requestDownload, user, setAuthModal } = useApp()
+  const [iframeLoading, setIframeLoading] = useState(true)
   const doc = useMemo(
     () => documents.find((d) => d.id === id),
     [documents, id],
   )
+
+  const isBieuMauCategory = useMemo(() => {
+    if (!doc?.category) return false
+    const cat = canonicalCategory(doc.category).toLowerCase()
+    return (
+      cat.includes('biểu mẫu') ||
+      cat.includes('bieu-mau') ||
+      cat.includes('bieu mau') ||
+      cat.includes('form')
+    )
+  }, [doc])
+
+  const isGated = !user && !isBieuMauCategory
 
   const related = useMemo(() => {
     if (!doc) return []
@@ -29,6 +42,18 @@ export default function DocumentDetail() {
       .filter((d) => d.category === doc.category && d.id !== doc.id)
       .slice(0, 3)
   }, [documents, doc])
+
+  const preview = useMemo(() => {
+    if (!doc?.view_preview_url || doc.view_preview_url === '#') return null
+    let raw = doc.view_preview_url.trim()
+    if (raw.includes('drive.google.com/file/d/')) {
+      raw = raw.replace(/\/view(\?.*)?$/, '/preview')
+    }
+    if (isGated && raw.toLowerCase().includes('.pdf') && !raw.includes('#')) {
+      raw = `${raw}#toolbar=0&navpanes=0&scrollbar=0`
+    }
+    return raw
+  }, [doc, isGated])
 
   if (loading) {
     return (
@@ -40,8 +65,11 @@ export default function DocumentDetail() {
 
   if (!doc) {
     return (
-      <div className="container page-empty">
-        <h1>Không tìm thấy tài liệu</h1>
+      <div className="container page-empty" style={{ padding: '4rem 1rem', textAlign: 'center' }}>
+        <h1 style={{ marginBottom: '0.75rem' }}>Không tìm thấy tài liệu</h1>
+        <p className="muted" style={{ marginBottom: '1.5rem' }}>
+          Tài liệu này không tồn tại hoặc đã bị di chuyển.
+        </p>
         <Link to="/" className="btn btn-primary">
           Về trang chủ
         </Link>
@@ -51,10 +79,6 @@ export default function DocumentDetail() {
 
   const categoryLabel = getCategoryLabel(doc.category)
   const saved = savedIds.includes(doc.id)
-  const preview =
-    doc.view_preview_url && doc.view_preview_url !== '#'
-      ? doc.view_preview_url
-      : null
 
   return (
     <div className="detail-page">
@@ -117,12 +141,87 @@ export default function DocumentDetail() {
                 <Eye size={20} /> Xem thử tài liệu
               </h2>
               {preview ? (
-                <div className="preview-frame-wrap">
-                  <iframe
-                    title={`Xem thử ${doc.title}`}
-                    src={preview}
-                    className="preview-frame"
-                  />
+                <div className={`preview-card-container ${isGated ? 'gated' : ''}`}>
+                  <div className={`preview-viewport ${isGated ? 'gated-viewport' : 'full-viewport'}`}>
+                    {iframeLoading && (
+                      <div className="iframe-loader">
+                        <div className="spinner" />
+                        <span>Đang tải xem thử tài liệu...</span>
+                      </div>
+                    )}
+
+                    {isGated ? (
+                      <div className="gated-content-wrapper">
+                        <div className="gated-iframe-box">
+                          <iframe
+                            title={`Xem thử ${doc.title}`}
+                            src={preview}
+                            className="preview-frame gated-iframe"
+                            loading="lazy"
+                            scrolling="no"
+                            onLoad={() => setIframeLoading(false)}
+                          />
+                        </div>
+                        <div className="preview-locked-card">
+                          <div className="lock-icon">🔒</div>
+                          <h3>Đã xem hết 3/10 trang xem thử</h3>
+                          <p>
+                            Đăng nhập hoặc đăng ký tài khoản AZTAX miễn phí để xem tiếp 7 trang còn lại và tải file gốc.
+                          </p>
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={() => setAuthModal('login')}
+                          >
+                            Đăng nhập để xem tiếp & Tải xuống
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <iframe
+                        title={`Xem thử ${doc.title}`}
+                        src={preview}
+                        className="preview-frame full-iframe"
+                        loading="lazy"
+                        onLoad={() => setIframeLoading(false)}
+                      />
+                    )}
+                  </div>
+
+                  <div className="preview-gate-bar">
+                    <div className="preview-gate-info">
+                      <span className="preview-gate-pages">
+                        Bản xem thử: {!isGated ? 'Đầy đủ' : '3/10 trang'}
+                      </span>
+                      {isGated && (
+                        <span className="preview-gate-remaining">
+                          Còn 7 trang. Đăng nhập / đăng ký để xem và tải file đầy đủ.
+                        </span>
+                      )}
+                      {!user && isBieuMauCategory && (
+                        <span className="preview-gate-remaining" style={{ color: '#004aad' }}>
+                          Bạn đang xem bản đầy đủ. Đăng nhập để tải file biểu mẫu gốc.
+                        </span>
+                      )}
+                    </div>
+                    {!user ? (
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm preview-login-btn"
+                        onClick={() => setAuthModal('login')}
+                      >
+                        Đăng nhập để tải xuống
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={() => requestDownload(doc)}
+                      >
+                        <Download size={15} /> Tải xuống ngay
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="preview-placeholder">

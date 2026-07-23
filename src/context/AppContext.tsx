@@ -5,30 +5,67 @@ import {
   useEffect,
   useMemo,
   useState,
+  type ReactNode,
 } from 'react'
-import { useAuth } from './AuthContext'
+import { useAuth, type AuthModalView } from './AuthContext'
 import {
   getLibraryIds,
   saveLead,
   toggleLibraryItem,
 } from '../services/api'
+import type { DocumentItem } from '../types/document'
+import type { InfographicItem } from '../services/infographics'
+import type { AuthProfile } from '../lib/supabase'
 
-const AppContext = createContext(null)
+export type ToastInfo = {
+  message: string
+  type: 'success' | 'info' | 'error'
+}
 
-export function AppProvider({ children }) {
+export type AppContextValue = {
+  user: AuthProfile | null
+  authReady: boolean
+  savedIds: string[]
+  authModal: AuthModalView
+  setAuthModal: (view: 'login' | 'register' | null) => void
+  downloadDoc: (DocumentItem & { unlocked?: boolean; lead?: any }) | null
+  setDownloadDoc: (doc: (DocumentItem & { unlocked?: boolean; lead?: any }) | null) => void
+  lightbox: InfographicItem | null
+  setLightbox: (item: InfographicItem | null) => void
+  searchQuery: string
+  setSearchQuery: (q: string) => void
+  toast: ToastInfo | null
+  showToast: (message: string, type?: 'success' | 'info' | 'error') => void
+  login: (email: string, password: string) => Promise<void>
+  register: (payload: any) => Promise<void>
+  logout: () => Promise<void>
+  toggleSave: (docId: string) => Promise<void>
+  requestDownload: (doc: DocumentItem) => Promise<void>
+  submitDownloadLead: (formData: any) => Promise<void>
+  isSupabaseConfigured: boolean
+}
+
+const AppContext = createContext<AppContextValue | null>(null)
+
+export function AppProvider({ children }: { children: ReactNode }) {
   const auth = useAuth()
   const { user, openLogin, signOut } = auth
 
-  const [savedIds, setSavedIds] = useState([])
-  const [downloadDoc, setDownloadDoc] = useState(null)
-  const [lightbox, setLightbox] = useState(null)
+  const [savedIds, setSavedIds] = useState<string[]>([])
+  const [downloadDoc, setDownloadDoc] = useState<
+    (DocumentItem & { unlocked?: boolean; lead?: any }) | null
+  >(null)
+  const [lightbox, setLightbox] = useState<InfographicItem | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [toast, setToast] = useState(null)
+  const [toast, setToast] = useState<ToastInfo | null>(null)
 
-  const showToast = useCallback((message, type = 'success') => {
-    setToast({ message, type })
-    setTimeout(() => setToast(null), 3200)
-  }, [])
+  const showToast = useCallback(
+    (message: string, type: 'success' | 'info' | 'error' = 'success') => {
+      setToast({ message, type })
+      setTimeout(() => setToast(null), 3200)
+    },
+    [],
+  )
 
   // Load My Library when user changes
   useEffect(() => {
@@ -53,7 +90,7 @@ export function AppProvider({ children }) {
   }, [signOut, showToast])
 
   const toggleSave = useCallback(
-    async (docId) => {
+    async (docId: string) => {
       if (!user) {
         openLogin()
         showToast('Vui lòng đăng nhập để lưu tài liệu.', 'info')
@@ -68,14 +105,14 @@ export function AppProvider({ children }) {
             : 'Đã gỡ khỏi Thư viện.',
         )
       } catch (e) {
-        showToast(e.message || 'Không lưu được tài liệu.', 'info')
+        showToast((e as Error).message || 'Không lưu được tài liệu.', 'info')
       }
     },
     [user, savedIds, showToast, openLogin],
   )
 
   const requestDownload = useCallback(
-    async (doc) => {
+    async (doc: DocumentItem) => {
       if (user) {
         setDownloadDoc({ ...doc, unlocked: true, lead: user })
         await saveLead({
@@ -96,7 +133,7 @@ export function AppProvider({ children }) {
   )
 
   const submitDownloadLead = useCallback(
-    async (formData) => {
+    async (formData: any) => {
       if (!downloadDoc) return
       await saveLead({
         ...formData,
@@ -114,7 +151,7 @@ export function AppProvider({ children }) {
 
   // Bridge: keep old setAuthModal('login'|'register') API for other components
   const setAuthModal = useCallback(
-    (view) => {
+    (view: 'login' | 'register' | null) => {
       if (view === 'login') openLogin()
       else if (view === 'register') auth.openRegister()
       else auth.closeAuthModal()
@@ -122,7 +159,7 @@ export function AppProvider({ children }) {
     [auth, openLogin],
   )
 
-  const value = useMemo(
+  const value = useMemo<AppContextValue>(
     () => ({
       user,
       authReady: !auth.loading,
@@ -138,7 +175,7 @@ export function AppProvider({ children }) {
       toast,
       showToast,
       login: auth.signIn,
-      register: async (payload) => {
+      register: async (payload: any) => {
         await auth.signUp(payload)
       },
       logout,
@@ -171,7 +208,7 @@ export function AppProvider({ children }) {
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }
 
-export function useApp() {
+export function useApp(): AppContextValue {
   const ctx = useContext(AppContext)
   if (!ctx) throw new Error('useApp must be used within AppProvider')
   return ctx

@@ -18,13 +18,30 @@ export default function ConsultationCTA() {
 
   const onSubmit = async (e) => {
     e.preventDefault()
-    if (!form.fullName || !form.email || !form.phone) {
+    if (!form.fullName.trim() || !form.email.trim() || !form.phone.trim()) {
       showToast('Vui lòng điền họ tên, email và số điện thoại.', 'info')
+      return
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(form.email.trim())) {
+      showToast('Email không đúng định dạng. Vui lòng nhập lại.', 'info')
+      return
+    }
+    const phoneRegex = /^[0-9\s+().-]{8,15}$/
+    if (!phoneRegex.test(form.phone.trim())) {
+      showToast('Số điện thoại không hợp lệ.', 'info')
       return
     }
     setSubmitting(true)
     try {
-      await saveLead({ ...form, source: 'consultation-cta' })
+      await saveLead({
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        company: form.company.trim(),
+        need: form.need.trim(),
+        source: 'consultation-cta',
+      })
       setDone(true)
       showToast('Đã gửi yêu cầu tư vấn. AZTAX sẽ liên hệ sớm!')
     } catch (err) {
@@ -44,9 +61,10 @@ export default function ConsultationCTA() {
         <div className="cta-hero-card">
           <span className="eyebrow light">Tư vấn cá nhân</span>
           <h2>Bạn chưa tìm thấy tài liệu phù hợp?</h2>
-          <p>
-            Nhận tư vấn miễn phí từ chuyên gia kế toán FDI của AZTAX. Mô tả nhu
-            cầu — chúng tôi sẽ gợi ý bộ tài liệu và quy trình phù hợp.
+          <p className="cta-lead">
+            Nhận tư vấn miễn phí từ chuyên gia kế toán FDI của AZTAX.
+            <br />
+            Mô tả nhu cầu — chúng tôi sẽ gợi ý bộ tài liệu và quy trình phù hợp.
           </p>
 
           <a href={CONTACT.phoneHref} className="cta-phone">
