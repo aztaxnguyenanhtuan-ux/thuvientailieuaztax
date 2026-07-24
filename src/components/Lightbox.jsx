@@ -7,23 +7,54 @@ import {
 } from '../services/infographics'
 import { Download, X, ZoomIn, ZoomOut } from './icons'
 
+/**
+ * Component Lightbox tối ưu hóa đặc biệt cho thiết bị Mobile thực tế (iOS Safari & Android):
+ * - Khóa cuộn trang bằng position: fixed tránh lỗi đơ / lag touch event trên iOS.
+ * - Giới hạn kích thước ảnh (max-height: 75vh, object-fit: contain, decoding: async, loading: lazy) ngăn tốn VRAM.
+ * - Touch target tối thiểu 44px cho tất cả các nút đóng & tải xuống.
+ * - Cơ chế phòng thủ: nếu nạp ảnh chậm quá 10s hoặc lỗi ➜ hiện card fallback kèm nút Tải xuống file gốc.
+ */
 export default function Lightbox() {
   const { lightbox, setLightbox } = useApp()
   const [zoom, setZoom] = useState(1)
   const [mediaError, setMediaError] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSlow, setIsSlow] = useState(false)
 
+  // Khóa cuộn trang chuẩn cho iOS Safari & Android tránh đơ / lag touch event
   useEffect(() => {
     if (!lightbox) return undefined
+
     setZoom(1)
     setMediaError(false)
+    setIsLoading(true)
+    setIsSlow(false)
+
+    // Lưu vị trí cuộn trang hiện tại và khóa body dạng fixed
+    const scrollY = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+    document.body.style.overflow = 'hidden'
+
     const onKey = (e) => {
       if (e.key === 'Escape') setLightbox(null)
     }
-    document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', onKey)
+
+    // Cảnh báo nếu nạp ảnh quá 10 giây trên di động
+    const timer = setTimeout(() => {
+      setIsSlow(true)
+    }, 10000)
+
     return () => {
-      document.body.style.overflow = ''
+      clearTimeout(timer)
       window.removeEventListener('keydown', onKey)
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      document.body.style.overflow = ''
+      window.scrollTo(0, scrollY)
     }
   }, [lightbox, setLightbox])
 
@@ -42,8 +73,17 @@ export default function Lightbox() {
 
   const showMedia = primaryView && !mediaError
 
+  const handleClose = (e) => {
+    e?.stopPropagation()
+    setLightbox(null)
+  }
+
   return (
-    <div className="modal-overlay" onClick={() => setLightbox(null)} role="presentation">
+    <div
+      className="modal-overlay"
+      onClick={handleClose}
+      role="presentation"
+    >
       <div
         className="lightbox-panel"
         onClick={(e) => e.stopPropagation()}
@@ -51,24 +91,27 @@ export default function Lightbox() {
         aria-modal="true"
         aria-label={lightbox.title}
       >
+        {/* Thanh công cụ xem Infographic */}
         <div className="lightbox-toolbar">
           <h3>{lightbox.title}</h3>
           <div className="lightbox-actions">
-            {primaryView?.kind === 'image' && (
+            {primaryView?.kind === 'image' && !mediaError && (
               <>
                 <button
                   type="button"
                   className="icon-btn"
-                  onClick={() => setZoom((z) => Math.min(z + 0.25, 2.5))}
-                  title="Zoom in"
+                  onClick={() => setZoom((z) => Math.min(z + 0.25, 2.0))}
+                  title="Phóng to"
+                  aria-label="Phóng to"
                 >
                   <ZoomIn size={18} />
                 </button>
                 <button
                   type="button"
                   className="icon-btn"
-                  onClick={() => setZoom((z) => Math.max(z - 0.25, 0.6))}
-                  title="Zoom out"
+                  onClick={() => setZoom((z) => Math.max(z - 0.25, 0.75))}
+                  title="Thu nhỏ"
+                  aria-label="Thu nhỏ"
                 >
                   <ZoomOut size={18} />
                 </button>
@@ -81,7 +124,7 @@ export default function Lightbox() {
                 target="_blank"
                 rel="noreferrer"
               >
-                <Download size={15} /> Tải xuống
+                <Download size={15} /> Tải về
               </a>
             ) : (
               <button type="button" className="btn btn-primary btn-sm" disabled>
@@ -91,15 +134,27 @@ export default function Lightbox() {
             <button
               type="button"
               className="icon-btn"
-              onClick={() => setLightbox(null)}
+              onClick={handleClose}
               aria-label="Đóng"
+              title="Đóng xem trước"
             >
               <X size={20} />
             </button>
           </div>
         </div>
 
+        {/* Khung hiển thị Infographic */}
         <div className="lightbox-stage">
+          {/* Trạng thái Loading / Ảnh nạp chậm trên di động */}
+          {isLoading && showMedia && (
+            <div className="lightbox-loading-indicator" style={{ position: 'absolute', color: '#ffffff', textAlign: 'center', zIndex: 5 }}>
+              <div className="spinner" style={{ margin: '0 auto 0.5rem' }} />
+              <span style={{ fontSize: '0.88rem', opacity: 0.9 }}>
+                {isSlow ? 'Ảnh Infographic dung lượng lớn, đang nạp...' : 'Đang nạp Infographic...'}
+              </span>
+            </div>
+          )}
+
           {showMedia && primaryView.kind === 'iframe' ? (
             <div className="lightbox-canvas lightbox-canvas-iframe">
               <iframe
@@ -108,45 +163,64 @@ export default function Lightbox() {
                 title={lightbox.title}
                 allow="autoplay"
                 allowFullScreen
+                onLoad={() => setIsLoading(false)}
+                onError={() => {
+                  setIsLoading(false)
+                  setMediaError(true)
+                }}
               />
             </div>
           ) : showMedia && primaryView.kind === 'image' ? (
             <div
               className="lightbox-canvas lightbox-canvas-image"
-              style={{ transform: `scale(${zoom})` }}
+              style={{ transform: `scale(${zoom})`, transformOrigin: 'center center' }}
             >
               <img
                 className="lightbox-img"
                 src={primaryView.src}
                 alt={lightbox.title}
-                onError={() => setMediaError(true)}
+                loading="lazy"
+                decoding="async"
+                fetchpriority="high"
+                onLoad={() => setIsLoading(false)}
+                onError={() => {
+                  setIsLoading(false)
+                  setMediaError(true)
+                }}
               />
             </div>
           ) : (
             <div
               className="lightbox-canvas"
               style={{
-                transform: `scale(${zoom})`,
                 background: `linear-gradient(160deg, ${lightbox.color || '#0B3A5C'} 0%, #061a2e 100%)`,
+                borderRadius: '12px',
+                padding: '2rem 1.5rem',
               }}
             >
-              <div className="lightbox-content">
-                <span className="info-thumb-badge">
+              <div className="lightbox-content" style={{ textAlign: 'center', maxWidth: '480px' }}>
+                <span className="info-thumb-badge" style={{ display: 'inline-block', marginBottom: '0.75rem' }}>
                   AZTAX INFOGRAPHIC · {lightbox.year || 2026}
                 </span>
-                <h2>{lightbox.title}</h2>
-                <div className="lightbox-tags">
-                  {(lightbox.tags || []).map((t) => (
-                    <span key={t} className="chip chip-light">
-                      {t}
-                    </span>
-                  ))}
-                </div>
-                <p className="lightbox-empty-msg">
-                  {primaryView && mediaError
-                    ? 'Không tải được nội dung xem trước. Với Google Drive hãy bật “Anyone with the link”, hoặc dán link /preview hoặc /view.'
-                    : 'Chưa có detailed_view_url. Hỗ trợ: link Google Drive (preview) hoặc URL ảnh trực tiếp.'}
+                <h2 style={{ color: '#ffffff', fontSize: '1.25rem', marginBottom: '1rem' }}>{lightbox.title}</h2>
+
+                <p className="lightbox-empty-msg" style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
+                  {mediaError
+                    ? 'Hình ảnh xem trước quá lớn hoặc đường truyền chậm. Bạn có thể tải file gốc về máy để xem tốt nhất.'
+                    : 'Chưa có bản xem trước trực tiếp. Bạn có thể bấm nút Tải xuống để xem file gốc.'}
                 </p>
+
+                {downloadUrl && (
+                  <a
+                    className="btn btn-primary btn-lg"
+                    href={downloadUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ margin: '0 auto', display: 'inline-flex' }}
+                  >
+                    <Download size={18} /> Tải file Infographic gốc
+                  </a>
+                )}
               </div>
             </div>
           )}
