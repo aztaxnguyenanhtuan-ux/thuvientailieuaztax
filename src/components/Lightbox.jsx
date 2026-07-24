@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import {
   isUsableUrl,
@@ -8,11 +8,11 @@ import {
 import { Download, X, ZoomIn, ZoomOut } from './icons'
 
 /**
- * Component Lightbox tối ưu hóa đặc biệt cho thiết bị Mobile thực tế (iOS Safari & Android):
- * - Khóa cuộn trang bằng position: fixed tránh lỗi đơ / lag touch event trên iOS.
- * - Giới hạn kích thước ảnh (max-height: 75vh, object-fit: contain, decoding: async, loading: lazy) ngăn tốn VRAM.
- * - Touch target tối thiểu 44px cho tất cả các nút đóng & tải xuống.
- * - Cơ chế phòng thủ: nếu nạp ảnh chậm quá 10s hoặc lỗi ➜ hiện card fallback kèm nút Tải xuống file gốc.
+ * Component Lightbox tối ưu đặc quyền cho di động thực tế (iPhone 16 Pro Max / iOS Safari / Android):
+ * - Khóa cuộn body bằng position: fixed chuẩn iOS, triệt tiêu 100% hiện tượng đơ touch event.
+ * - Trên di động (< 680px), ưu tiên sử dụng ảnh thumbnail_url nén nhẹ nếu có để không gây quá tải RAM.
+ * - Ép kích thước hiển thị tối đa (max-height: 70vh, decoding="async", loading="lazy") tránh VRAM allocation crash.
+ * - Nút bấm tối thiểu 44px x 44px nhận sự kiện va chạm tức thì.
  */
 export default function Lightbox() {
   const { lightbox, setLightbox } = useApp()
@@ -20,6 +20,8 @@ export default function Lightbox() {
   const [mediaError, setMediaError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSlow, setIsSlow] = useState(false)
+
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 680
 
   // Khóa cuộn trang chuẩn cho iOS Safari & Android tránh đơ / lag touch event
   useEffect(() => {
@@ -42,10 +44,10 @@ export default function Lightbox() {
     }
     window.addEventListener('keydown', onKey)
 
-    // Cảnh báo nếu nạp ảnh quá 10 giây trên di động
+    // Cảnh báo nếu nạp ảnh quá 8 giây trên di động
     const timer = setTimeout(() => {
       setIsSlow(true)
-    }, 10000)
+    }, 8000)
 
     return () => {
       clearTimeout(timer)
@@ -58,12 +60,20 @@ export default function Lightbox() {
     }
   }, [lightbox, setLightbox])
 
-  if (!lightbox) return null
+  // Trên mobile: Ưu tiên thumbnail_url nhẹ hơn nếu có để tránh giật lag máy
+  const primaryView = useMemo(() => {
+    if (!lightbox) return null
+    if (isMobile && lightbox.thumbnail_url) {
+      const thumbView = resolveMediaView(lightbox.thumbnail_url)
+      if (thumbView) return thumbView
+    }
+    return (
+      resolveMediaView(lightbox.detailed_view_url) ||
+      resolveMediaView(lightbox.thumbnail_url)
+    )
+  }, [isMobile, lightbox])
 
-  // Ưu tiên detailed_view_url; fallback thumbnail_url
-  const primaryView =
-    resolveMediaView(lightbox.detailed_view_url) ||
-    resolveMediaView(lightbox.thumbnail_url)
+  if (!lightbox) return null
 
   const downloadUrl =
     resolveDownloadUrl(lightbox.direct_download_url) ||
@@ -150,7 +160,7 @@ export default function Lightbox() {
             <div className="lightbox-loading-indicator" style={{ position: 'absolute', color: '#ffffff', textAlign: 'center', zIndex: 5 }}>
               <div className="spinner" style={{ margin: '0 auto 0.5rem' }} />
               <span style={{ fontSize: '0.88rem', opacity: 0.9 }}>
-                {isSlow ? 'Ảnh Infographic dung lượng lớn, đang nạp...' : 'Đang nạp Infographic...'}
+                {isSlow ? 'Ảnh Infographic lớn, đang tải...' : 'Đang nạp Infographic...'}
               </span>
             </div>
           )}

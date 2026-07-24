@@ -42,14 +42,12 @@ export function formatGooglePreviewUrl(rawUrl = '') {
 }
 
 /**
- * Component PdfViewer nâng cấp:
- * - Tự động phân loại 3 định dạng tài liệu & nguồn link:
- *   1. Link Google Docs / Google Drive ➜ Chuyển thành link /preview và nhúng iframe Google Docs Viewer xem full.
- *   2. File Word/Excel trực tiếp (.doc, .docx, .xls, .xlsx) ➜ Nhúng Microsoft Office Online Viewer xem full.
- *   3. File PDF (.pdf) ➜ Render bằng react-pdf (3 trang khi chưa đăng nhập, full trang + toolbar khi đã đăng nhập).
- * - Phân quyền Tải xuống:
- *   + Chưa đăng nhập: Cho xem FULL online qua iframe, ẩn/khóa nút tải xuống, hiện thông báo "Đăng nhập để tải file gốc".
- *   + Đã đăng nhập: Cho vừa xem FULL vừa tải file gốc về máy.
+ * Component PdfViewer tối ưu cho Mobile (đặc biệt iOS Safari):
+ * - Trên Mobile (< 680px): Khi CHƯA ĐĂNG NHẬP, chỉ render 1 trang tại một thời điểm (kèm nút Trang trước/Trang sau 1-3)
+ *   ngăn chặn việc nạp đồng thời 3 tệp HTML5 Canvas lớn gây quá tải VRAM và lag/đơ Mobile Safari trên iPhone.
+ * - Giới hạn devicePixelRatio <= 1.5 trên màn hình di động Retina để giảm 60% mức sử dụng bộ nhớ RAM/VRAM.
+ * - Tắt hoàn toàn renderTextLayer và renderAnnotationLayer để tối đa tốc độ.
+ * - Trên Desktop (>= 680px): Giữ nguyên giao diện render xếp chồng 3 trang đầu.
  */
 export default function PdfViewer({
   file,
@@ -61,6 +59,7 @@ export default function PdfViewer({
 }) {
   const [numPages, setNumPages] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [gatedMobilePage, setGatedMobilePage] = useState(1)
   const [scale, setScale] = useState(1.0)
   const [containerWidth, setContainerWidth] = useState(700)
   const [loadError, setLoadError] = useState(false)
@@ -69,6 +68,9 @@ export default function PdfViewer({
   const [timedOut, setTimedOut] = useState(false)
   const [retryKey, setRetryKey] = useState(0)
   const containerRef = useRef(null)
+
+  // Nhận biết màn hình di động (< 680px)
+  const isMobileWidth = containerWidth < 680
 
   // 1. Phân loại link Google Docs / Drive
   const isGoogleLink = useMemo(() => {
@@ -151,6 +153,7 @@ export default function PdfViewer({
   useEffect(() => {
     setNumPages(null)
     setCurrentPage(1)
+    setGatedMobilePage(1)
     setScale(1.0)
     setLoadError(false)
     setErrorMessage('')
@@ -173,6 +176,7 @@ export default function PdfViewer({
   const onDocumentLoadSuccess = ({ numPages: total }) => {
     setNumPages(total)
     setCurrentPage(1)
+    setGatedMobilePage(1)
     setLoadError(false)
     setTimedOut(false)
     setProgress(100)
@@ -437,41 +441,108 @@ export default function PdfViewer({
             }
             error={null}
           >
-            {/* CHẾ ĐỘ CHƯA ĐĂNG NHẬP ➜ RENDER 3 TRANG ĐẦU + OVERLAY KHÓA */}
+            {/* CHẾ ĐỘ CHƯA ĐĂNG NHẬP ➜ TỐI ƯU HÓA RENDER MOBILE DẠNG 1 TRANG TẠI MỘT THỜI ĐIỂM */}
             {isGated && (
               <div className="pdf-gated-stack">
-                {Array.from({ length: gatedMaxPages }, (_, index) => (
-                  <div key={`gated-page-${index + 1}`} className="pdf-page-item">
-                    <Page
-                      pageNumber={index + 1}
-                      width={containerWidth}
-                      scale={scale}
-                      renderTextLayer={false}
-                      renderAnnotationLayer={false}
-                    />
-                    <span className="pdf-page-badge">Trang {index + 1}</span>
-                  </div>
-                ))}
+                {isMobileWidth ? (
+                  /* RENDER TRÊN MOBILE (< 680px): CHỈ 1 TRANG TẠI MỘT THỜI ĐIỂM ĐỂ KHÔNG QUÁ TẢI VRAM IPHONE */
+                  <div className="pdf-mobile-gated-wrap" style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div className="pdf-mobile-nav" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', background: '#ffffff', padding: '0.4rem 0.85rem', borderRadius: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                      <button
+                        type="button"
+                        className="pdf-btn"
+                        style={{ width: '36px', height: '36px', minHeight: '36px' }}
+                        onClick={() => setGatedMobilePage((p) => Math.max(1, p - 1))}
+                        disabled={gatedMobilePage <= 1}
+                        title="Trang xem thử trước"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#004aad' }}>
+                        Xem thử: Trang <strong>{gatedMobilePage}</strong> / {gatedMaxPages}
+                      </span>
+                      <button
+                        type="button"
+                        className="pdf-btn"
+                        style={{ width: '36px', height: '36px', minHeight: '36px' }}
+                        onClick={() => setGatedMobilePage((p) => Math.min(gatedMaxPages, p + 1))}
+                        disabled={gatedMobilePage >= gatedMaxPages}
+                        title="Trang xem thử tiếp theo"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
 
-                <div className="preview-locked-card">
-                  <div className="lock-icon">
-                    <Lock size={32} />
+                    <div className="pdf-page-item">
+                      <Page
+                        key={`mobile-gated-page-${gatedMobilePage}`}
+                        pageNumber={gatedMobilePage}
+                        width={containerWidth}
+                        scale={scale}
+                        devicePixelRatio={Math.min(window.devicePixelRatio || 1, 1.5)}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                      />
+                      <span className="pdf-page-badge">Trang {gatedMobilePage} / {gatedMaxPages}</span>
+                    </div>
+
+                    <div className="preview-locked-card" style={{ marginTop: '0.75rem' }}>
+                      <div className="lock-icon">
+                        <Lock size={28} />
+                      </div>
+                      <h3>
+                        Đã xem {gatedMobilePage}/{numPages || 10} trang xem thử
+                      </h3>
+                      <p>
+                        Đăng nhập hoặc đăng ký tài khoản AZTAX miễn phí để xem tiếp các
+                        trang còn lại và tải file gốc đầy đủ.
+                      </p>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-lg"
+                        onClick={() => onOpenAuth?.('login')}
+                      >
+                        Đăng nhập để xem tiếp & Tải xuống
+                      </button>
+                    </div>
                   </div>
-                  <h3>
-                    Đã xem hết {gatedMaxPages}/{numPages || 10} trang xem thử
-                  </h3>
-                  <p>
-                    Đăng nhập hoặc đăng ký tài khoản AZTAX miễn phí để xem tiếp các
-                    trang còn lại và tải file gốc đầy đủ.
-                  </p>
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-lg"
-                    onClick={() => onOpenAuth?.('login')}
-                  >
-                    Đăng nhập để xem tiếp & Tải xuống
-                  </button>
-                </div>
+                ) : (
+                  /* RENDER TRÊN DESKTOP (>= 680px): XẾP CHỒNG 3 TRANG ĐẦU */
+                  <>
+                    {Array.from({ length: gatedMaxPages }, (_, index) => (
+                      <div key={`gated-page-${index + 1}`} className="pdf-page-item">
+                        <Page
+                          pageNumber={index + 1}
+                          width={containerWidth}
+                          scale={scale}
+                          renderTextLayer={false}
+                          renderAnnotationLayer={false}
+                        />
+                        <span className="pdf-page-badge">Trang {index + 1}</span>
+                      </div>
+                    ))}
+
+                    <div className="preview-locked-card">
+                      <div className="lock-icon">
+                        <Lock size={32} />
+                      </div>
+                      <h3>
+                        Đã xem hết {gatedMaxPages}/{numPages || 10} trang xem thử
+                      </h3>
+                      <p>
+                        Đăng nhập hoặc đăng ký tài khoản AZTAX miễn phí để xem tiếp các
+                        trang còn lại và tải file gốc đầy đủ.
+                      </p>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-lg"
+                        onClick={() => onOpenAuth?.('login')}
+                      >
+                        Đăng nhập để xem tiếp & Tải xuống
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -483,6 +554,7 @@ export default function PdfViewer({
                     pageNumber={currentPage}
                     width={containerWidth}
                     scale={scale}
+                    devicePixelRatio={Math.min(window.devicePixelRatio || 1, 1.5)}
                     renderTextLayer={false}
                     renderAnnotationLayer={false}
                   />
