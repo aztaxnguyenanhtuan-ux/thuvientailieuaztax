@@ -47,6 +47,9 @@ function mapAuthErrorMessage(message: string | undefined, fallback: string): str
   if (lower.includes('rate limit') || lower.includes('too many requests')) {
     return 'Thao tác quá nhiều lần. Vui lòng thử lại sau.'
   }
+  if (lower.includes('auth session missing') || lower.includes('session missing')) {
+    return 'Liên kết khôi phục mật khẩu đã hết hạn hoặc không hợp lệ. Vui lòng bấm "Quên mật khẩu" để gửi lại email mới.'
+  }
   if (lower.includes('network') || lower.includes('fetch')) {
     return 'Không kết nối được máy chủ. Kiểm tra mạng và thử lại.'
   }

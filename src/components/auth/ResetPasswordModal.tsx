@@ -5,7 +5,7 @@ import { X } from '../icons'
 import PasswordField from './PasswordField'
 
 export default function ResetPasswordModal() {
-  const { authModal, closeAuthModal, updatePassword } = useAuth()
+  const { authModal, closeAuthModal, updatePassword, session } = useAuth()
   const { showToast } = useApp()
   const open = authModal === 'reset-password'
 
@@ -31,6 +31,13 @@ export default function ResetPasswordModal() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+
+    if (!session) {
+      setError(
+        'Liên kết khôi phục mật khẩu đã hết hạn hoặc không hợp lệ. Vui lòng bấm Quên mật khẩu để gửi lại email mới.',
+      )
+      return
+    }
 
     if (password.length < 6) {
       setError('Mật khẩu mới phải có tối thiểu 6 ký tự.')
