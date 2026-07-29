@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  ExternalLink,
   Lock,
   RefreshCw,
   RotateCcw,
@@ -237,10 +238,24 @@ export default function PdfViewer({
       <div className="pdf-viewer-root" ref={containerRef}>
         <div className="office-viewer-wrapper">
           <div className="office-header-bar">
-            <span className="chip doc-category-chip" style={{ background: '#eaf2fb', color: '#004aad' }}>
-              Google Docs / Drive
-            </span>
-            <span className="office-header-title">{title}</span>
+            <div className="office-header-left">
+              <span className="chip doc-category-chip" style={{ background: '#eaf2fb', color: '#004aad' }}>
+                Google Docs / Drive
+              </span>
+              <span className="office-header-title" title={title}>{title}</span>
+            </div>
+            {formattedGoogleUrl && formattedGoogleUrl !== '#' && (
+              <a
+                href={formattedGoogleUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="office-header-action"
+                title="Mở tài liệu trong cửa sổ/tab mới"
+              >
+                <ExternalLink size={14} />
+                <span>Xem toàn màn hình</span>
+              </a>
+            )}
           </div>
 
           <div className="office-iframe-box" style={{ position: 'relative' }}>
