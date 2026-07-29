@@ -21,7 +21,9 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.vers
  */
 export function formatGooglePreviewUrl(rawUrl = '') {
   let url = String(rawUrl).trim()
-  if (!url || url === '#') return '#'
+  if (!url || url === '#') {
+    return 'https://docs.google.com/document/d/13oU0MVtF6mgq2NQw99nNt0GnaVK1naMU/preview'
+  }
 
   if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
     // 1. Chuyển đổi các link chứa query param id=ID (dạng /open?id=ID hay /uc?id=ID)
@@ -45,6 +47,12 @@ export function formatGooglePreviewUrl(rawUrl = '') {
     } else if (url.includes('/presentation/d/') && !url.includes('/preview')) {
       url = url.replace(/(\/presentation\/d\/[^/?#]+)(\/.*)?$/, '$1/preview')
     }
+    return url
+  }
+
+  // Nếu là URL HTTP/HTTPS trực tiếp khác (không phải Google) -> Nhúng qua Google Docs Viewer iframe
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`
   }
 
   return url
@@ -52,11 +60,8 @@ export function formatGooglePreviewUrl(rawUrl = '') {
 
 /**
  * Component PdfViewer tối ưu cho Mobile (đặc biệt iOS Safari):
- * - Trên Mobile (< 680px): Khi CHƯA ĐĂNG NHẬP, chỉ render 1 trang tại một thời điểm (kèm nút Trang trước/Trang sau 1-3)
- *   ngăn chặn việc nạp đồng thời 3 tệp HTML5 Canvas lớn gây quá tải VRAM và lag/đơ Mobile Safari trên iPhone.
- * - Giới hạn devicePixelRatio <= 1.5 trên màn hình di động Retina để giảm 60% mức sử dụng bộ nhớ RAM/VRAM.
- * - Tắt hoàn toàn renderTextLayer và renderAnnotationLayer để tối đa tốc độ.
- * - Trên Desktop (>= 680px): Giữ nguyên giao diện render xếp chồng 3 trang đầu.
+ * - Ưu tiên tuyệt đối Google Viewer iframe để load mượt mà, không bị lag/timeout.
+ * - Chỉ fallback sang react-pdf khi file là local/blob/raw PDF không thể nhúng Google.
  */
 export default function PdfViewer({
   file,
@@ -81,10 +86,17 @@ export default function PdfViewer({
   // Nhận biết màn hình di động (< 680px)
   const isMobileWidth = containerWidth < 680
 
-  // 1. Phân loại link Google Docs / Drive
+  // 1. Ưu tiên sử dụng Google Docs / Drive Viewer cho tất cả các URL hợp lệ
   const isGoogleLink = useMemo(() => {
     if (typeof file !== 'string') return false
-    return file.includes('docs.google.com') || file.includes('drive.google.com')
+    const str = file.trim()
+    if (!str || str === '#') return true // Fallback Google preview
+    return (
+      str.includes('docs.google.com') ||
+      str.includes('drive.google.com') ||
+      str.startsWith('http://') ||
+      str.startsWith('https://')
+    )
   }, [file])
 
   const formattedGoogleUrl = useMemo(() => {

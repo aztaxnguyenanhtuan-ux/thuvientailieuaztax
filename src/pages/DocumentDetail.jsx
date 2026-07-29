@@ -37,31 +37,41 @@ export default function DocumentDetail() {
   const preview = useMemo(() => {
     if (!doc) return null
 
+    const isValidUrl = (url) =>
+      typeof url === 'string' && url.trim() !== '' && url.trim() !== '#'
+
     if (user) {
-      // ĐÃ ĐĂNG NHẬP ➜ Ưu tiên lấy bản FULL (view_preview_url)
-      if (doc.view_preview_url && doc.view_preview_url !== '#') {
+      // 1. Khi ĐÃ ĐĂNG NHẬP:
+      // a. Ưu tiên tuyệt đối view_preview_url (bản đầy đủ)
+      if (isValidUrl(doc.view_preview_url)) {
         return doc.view_preview_url.trim()
       }
-      if (doc.preview_3pages_url && doc.preview_3pages_url !== '#') {
+      // b. Nếu không có thì dùng preview_3pages_url
+      if (isValidUrl(doc.preview_3pages_url)) {
         return doc.preview_3pages_url.trim()
       }
     } else {
-      // CHƯA ĐĂNG NHẬP ➜ Ưu tiên lấy bản 3 TRANG (preview_3pages_url)
-      if (doc.preview_3pages_url && doc.preview_3pages_url !== '#') {
+      // 2. Khi CHƯA ĐĂNG NHẬP:
+      // a. Ưu tiên preview_3pages_url (bản 3 trang)
+      if (isValidUrl(doc.preview_3pages_url)) {
         return doc.preview_3pages_url.trim()
       }
-      if (doc.view_preview_url && doc.view_preview_url !== '#') {
+      // b. Nếu không có thì dùng view_preview_url
+      if (isValidUrl(doc.view_preview_url)) {
         return doc.view_preview_url.trim()
       }
     }
 
-    if (doc.storage_path && doc.storage_path !== '#') {
+    // Các đường dẫn dự phòng khác nếu có
+    if (isValidUrl(doc.storage_path)) {
       return doc.storage_path.trim()
     }
-    if (doc.direct_download_url && doc.direct_download_url !== '#') {
+    if (isValidUrl(doc.direct_download_url)) {
       return doc.direct_download_url.trim()
     }
-    return null
+
+    // Fallback mặc định dùng link Google Drive xem thử mượt mà
+    return 'https://docs.google.com/document/d/13oU0MVtF6mgq2NQw99nNt0GnaVK1naMU/preview'
   }, [doc, user])
 
   // Console.log debug thông tin đường dẫn xem thử khi người dùng truy cập trang chi tiết
