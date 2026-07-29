@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import BundleSection from '../components/BundleSection'
+// import BundleSection from '../components/BundleSection'
 import ConsultationCTA from '../components/ConsultationCTA'
 import DocumentFilter from '../components/DocumentFilter'
 import Hero from '../components/Hero'
@@ -51,7 +51,7 @@ export default function Home() {
       {!infoLoading && !infoError && (
         <InfographicGallery infographics={infographics} limit={6} />
       )}
-      <BundleSection />
+      {/* <BundleSection /> */}
       <Testimonial />
       <ConsultationCTA />
     </>

@@ -18,6 +18,7 @@ const DOCUMENT_COLUMNS = [
   'tags',
   'thumbnail_url',
   'icon',
+  'preview_3pages_url',
   'view_preview_url',
   'direct_download_url',
   'storage_path',
@@ -158,15 +159,21 @@ export function normalizeDocument(row: DocumentRow): DocumentItem {
     badgeTags.push('Popular')
   }
 
-  // Tự động nhận diện view_preview_url hoặc storage_path từ Supabase
+  // Tự động nhận diện preview_3pages_url, view_preview_url trước tiên từ Supabase
+  const rawPreview3Pages = asString(
+    pick(row, 'preview_3pages_url', 'preview_3_pages_url', 'preview_3pages', 'preview_3_pages'),
+    '',
+  )
   const rawPreview = asString(
-    pick(row, 'storage_path', 'view_preview_url', 'preview_url', 'preview_path', 'preview'),
+    pick(row, 'view_preview_url', 'preview_url', 'preview_path', 'preview', 'storage_path'),
     '#',
   )
   const rawDownload = asString(
     pick(row, 'direct_download_url', 'download_url', 'file_url', 'storage_path', 'url'),
     '#',
   )
+
+  const resolvedPreview3Pages = rawPreview3Pages ? resolveSupabaseStorageUrl(rawPreview3Pages, 'documents') : ''
 
   return {
     id: id || `doc-${Math.random().toString(36).slice(2, 9)}`,
@@ -177,6 +184,7 @@ export function normalizeDocument(row: DocumentRow): DocumentItem {
     description: asString(pick(row, 'description', 'desc', 'summary', 'mo_ta')),
     thumbnail_url: asString(pick(row, 'thumbnail_url', 'thumbnail', 'image_url')),
     icon: asString(pick(row, 'icon', 'icon_name'), 'file-text'),
+    preview_3pages_url: resolvedPreview3Pages || undefined,
     view_preview_url: resolveSupabaseStorageUrl(rawPreview, 'documents'),
     direct_download_url: resolveSupabaseStorageUrl(rawDownload, 'documents'),
     year,

@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import DocumentCard from '../components/DocumentCard'
 import PdfViewer from '../components/PdfViewer'
-import { getCategoryLabel, canonicalCategory } from '../data/constants'
+import { getCategoryLabel } from '../data/constants'
 import { useApp } from '../context/AppContext'
 import { useDocuments } from '../hooks/useData'
 import {
@@ -25,18 +25,7 @@ export default function DocumentDetail() {
     [documents, id],
   )
 
-  const isBieuMauCategory = useMemo(() => {
-    if (!doc?.category) return false
-    const cat = canonicalCategory(doc.category).toLowerCase()
-    return (
-      cat.includes('biểu mẫu') ||
-      cat.includes('bieu-mau') ||
-      cat.includes('bieu mau') ||
-      cat.includes('form')
-    )
-  }, [doc])
-
-  const isGated = !user && !isBieuMauCategory
+  const isGated = !user
 
   const related = useMemo(() => {
     if (!doc) return []
@@ -45,28 +34,49 @@ export default function DocumentDetail() {
       .slice(0, 3)
   }, [documents, doc])
 
-  const isOfficeDoc = useMemo(() => {
-    if (!doc) return false
-    const typeStr = String(doc.type || '').toUpperCase().trim()
-    const urlStr = String(doc.view_preview_url || doc.direct_download_url || '').toLowerCase().split('?')[0]
-
-    if (urlStr.includes('docs.google.com') || urlStr.includes('drive.google.com')) return true
-    if (urlStr.endsWith('.pdf')) return false
-    if (['DOC', 'DOCX', 'WORD', 'XLS', 'XLSX', 'EXCEL'].includes(typeStr)) return true
-
-    return (
-      /\.(docx?|xlsx?|docm|xlsm)$/i.test(urlStr) ||
-      urlStr.includes('.doc') ||
-      urlStr.includes('.docx') ||
-      urlStr.includes('.xls') ||
-      urlStr.includes('.xlsx')
-    )
-  }, [doc])
-
   const preview = useMemo(() => {
-    if (!doc?.view_preview_url || doc.view_preview_url === '#') return null
-    return doc.view_preview_url.trim()
-  }, [doc])
+    if (!doc) return null
+
+    if (user) {
+      // ĐÃ ĐĂNG NHẬP ➜ Ưu tiên lấy bản FULL (view_preview_url)
+      if (doc.view_preview_url && doc.view_preview_url !== '#') {
+        return doc.view_preview_url.trim()
+      }
+      if (doc.preview_3pages_url && doc.preview_3pages_url !== '#') {
+        return doc.preview_3pages_url.trim()
+      }
+    } else {
+      // CHƯA ĐĂNG NHẬP ➜ Ưu tiên lấy bản 3 TRANG (preview_3pages_url)
+      if (doc.preview_3pages_url && doc.preview_3pages_url !== '#') {
+        return doc.preview_3pages_url.trim()
+      }
+      if (doc.view_preview_url && doc.view_preview_url !== '#') {
+        return doc.view_preview_url.trim()
+      }
+    }
+
+    if (doc.storage_path && doc.storage_path !== '#') {
+      return doc.storage_path.trim()
+    }
+    if (doc.direct_download_url && doc.direct_download_url !== '#') {
+      return doc.direct_download_url.trim()
+    }
+    return null
+  }, [doc, user])
+
+  // Console.log debug thông tin đường dẫn xem thử khi người dùng truy cập trang chi tiết
+  useEffect(() => {
+    if (doc) {
+      console.log('--------------------------------------------------')
+      console.log('[DEBUG DocumentDetail] ID:', doc.id)
+      console.log('[DEBUG DocumentDetail] Status:', user ? 'ĐÃ ĐĂNG NHẬP (User logged in)' : 'CHƯA ĐĂNG NHẬP (Guest)')
+      console.log('[DEBUG DocumentDetail] doc.preview_3pages_url (3 trang):', doc.preview_3pages_url)
+      console.log('[DEBUG DocumentDetail] doc.view_preview_url (Full):', doc.view_preview_url)
+      console.log('[DEBUG DocumentDetail] doc.direct_download_url:', doc.direct_download_url)
+      console.log('[DEBUG DocumentDetail] Final Selected Preview URL:', preview)
+      console.log('--------------------------------------------------')
+    }
+  }, [doc, user, preview])
 
   if (loading) {
     return (
@@ -173,7 +183,7 @@ export default function DocumentDetail() {
                     docType={doc.type}
                     isGated={isGated}
                     onOpenAuth={setAuthModal}
-                    onDownload={() => requestDownload(doc)}
+                    onDownload={user ? () => requestDownload(doc) : null}
                   />
                 </div>
               ) : (

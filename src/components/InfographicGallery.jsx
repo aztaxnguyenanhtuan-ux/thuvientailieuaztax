@@ -7,10 +7,10 @@ import {
   resolveDownloadUrl,
   resolveMediaView,
 } from '../services/infographics'
-import { Download, Eye, ZoomIn } from './icons'
+import { Download, Eye, FileImage, ZoomIn } from './icons'
 
 /**
- * Ảnh card: thumbnail_url → detailed_view_url → gradient (khi hết candidate / load lỗi).
+ * Ảnh card: thumbnail_url → detailed_view_url → gradient fallback (khi hết candidate / load lỗi).
  * Lightbox vẫn mở item gốc (detailed_view_url) — không đổi.
  */
 function InfographicThumb({ item, onOpen }) {
@@ -46,13 +46,6 @@ function InfographicThumb({ item, onOpen }) {
       <button
         type="button"
         className={`info-thumb ${thumbUrl ? 'has-image' : ''}`}
-        style={
-          thumbUrl
-            ? undefined
-            : {
-                background: `linear-gradient(145deg, ${item.color || '#004AAD'} 0%, #06356F 100%)`,
-              }
-        }
         onClick={() => onOpen(item)}
         aria-label={`Xem ${item.title}`}
       >
@@ -67,14 +60,18 @@ function InfographicThumb({ item, onOpen }) {
             onError={handleImageError}
           />
         ) : (
-          <div className="info-thumb-inner">
-            <span className="info-thumb-badge">INFOGRAPHIC</span>
-            <h4>{item.title}</h4>
-            <div className="info-thumb-meta">
-              {item.tags?.slice(0, 2).map((t) => (
-                <span key={t}>{t}</span>
-              ))}
+          <div
+            className="info-thumb-fallback"
+            style={{
+              background: `linear-gradient(135deg, ${item.color || '#004AAD'} 0%, #06356F 100%)`,
+            }}
+          >
+            <div className="info-thumb-fallback-pattern" />
+            <div className="info-thumb-fallback-icon">
+              <FileImage size={26} />
             </div>
+            <span className="info-thumb-fallback-badge">INFOGRAPHIC</span>
+            <h4 className="info-thumb-fallback-title">{item.title}</h4>
           </div>
         )}
         <span className="info-zoom">

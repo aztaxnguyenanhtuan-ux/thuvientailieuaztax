@@ -7,8 +7,8 @@ export type DocumentItem = {
   title: string
   description: string
   thumbnail_url: string
-  icon: string
   view_preview_url: string
+  preview_3pages_url?: string
   direct_download_url: string
   year: number
   featured: boolean

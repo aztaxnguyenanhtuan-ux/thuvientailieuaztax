@@ -224,6 +224,7 @@ export async function saveDocumentsCms(docs) {
     thumbnail_url: d.thumbnail_url || '',
     icon: d.icon || 'file-text',
     view_preview_url: d.view_preview_url || '#',
+    preview_3pages_url: d.preview_3pages_url || null,
     direct_download_url: d.direct_download_url || '#',
     year: d.year || 2026,
     featured: Boolean(d.featured),

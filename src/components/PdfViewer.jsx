@@ -17,25 +17,34 @@ import {
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
 
 /**
- * Chuẩn hóa URL xem thử Google Drive / Google Docs về dạng /preview
+ * Chuẩn hóa URL xem thử Google Drive / Google Docs / Sheets / Slides về dạng /preview
  */
 export function formatGooglePreviewUrl(rawUrl = '') {
   let url = String(rawUrl).trim()
   if (!url || url === '#') return '#'
 
-  // 1. Google Drive File: https://drive.google.com/file/d/ID/view -> /preview
-  if (url.includes('drive.google.com/file/d/')) {
-    return url.replace(/\/view(\?.*)?$/, '/preview').replace(/\/edit(\?.*)?$/, '/preview')
-  }
+  if (url.includes('drive.google.com') || url.includes('docs.google.com')) {
+    // 1. Chuyển đổi các link chứa query param id=ID (dạng /open?id=ID hay /uc?id=ID)
+    if (url.includes('id=')) {
+      const match = url.match(/id=([a-zA-Z0-9_-]+)/)
+      if (match && match[1]) {
+        return `https://drive.google.com/file/d/${match[1]}/preview`
+      }
+    }
 
-  // 2. Google Docs Document: https://docs.google.com/document/d/ID/edit -> /preview
-  if (url.includes('docs.google.com/document/d/')) {
-    return url.replace(/\/edit(\?.*)?$/, '/preview').replace(/\/view(\?.*)?$/, '/preview')
-  }
+    // 2. Chuyển /edit, /view hoặc tham số query ở cuối thành /preview
+    url = url.replace(/\/(edit|view)(\?.*)?$/, '/preview')
 
-  // 3. Google Sheets: https://docs.google.com/spreadsheets/d/ID/edit -> /preview
-  if (url.includes('docs.google.com/spreadsheets/d/')) {
-    return url.replace(/\/edit(\?.*)?$/, '/preview').replace(/\/view(\?.*)?$/, '/preview')
+    // 3. Đảm bảo các link chứa ID file/doc có đuôi /preview
+    if (url.includes('/file/d/') && !url.includes('/preview')) {
+      url = url.replace(/(\/file\/d\/[^/?#]+)(\/.*)?$/, '$1/preview')
+    } else if (url.includes('/document/d/') && !url.includes('/preview')) {
+      url = url.replace(/(\/document\/d\/[^/?#]+)(\/.*)?$/, '$1/preview')
+    } else if (url.includes('/spreadsheets/d/') && !url.includes('/preview')) {
+      url = url.replace(/(\/spreadsheets\/d\/[^/?#]+)(\/.*)?$/, '$1/preview')
+    } else if (url.includes('/presentation/d/') && !url.includes('/preview')) {
+      url = url.replace(/(\/presentation\/d\/[^/?#]+)(\/.*)?$/, '$1/preview')
+    }
   }
 
   return url
@@ -201,6 +210,17 @@ export default function PdfViewer({
   // TRƯỜNG HỢP 1: TÀI LIỆU GOOGLE DOCS / DRIVE LINK (isGoogleLink = true)
   // ==========================================
   if (isGoogleLink) {
+    if (!formattedGoogleUrl || formattedGoogleUrl === '#') {
+      return (
+        <div className="pdf-viewer-root" ref={containerRef}>
+          <div className="pdf-error-box">
+            <h3>Không thể nạp link xem thử Google</h3>
+            <p>Liên kết Google Drive/Docs của tài liệu này chưa sẵn sàng hoặc không hợp lệ.</p>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="pdf-viewer-root" ref={containerRef}>
         <div className="office-viewer-wrapper">
@@ -211,23 +231,39 @@ export default function PdfViewer({
             <span className="office-header-title">{title}</span>
           </div>
 
-          <div className="office-iframe-box">
+          <div className="office-iframe-box" style={{ position: 'relative' }}>
             <iframe
               title={`Xem thử Google ${title}`}
               src={formattedGoogleUrl}
               className="office-iframe"
               loading="lazy"
-              allow="autoplay"
+              allow="autoplay; fullscreen"
+              allowFullScreen
             />
+
+            {/* Khi CHƯA ĐĂNG NHẬP (isGated = true): Phủ lớp overlay mờ bo tròn sang trọng đè đĩa icon pop-out Google Drive */}
+            {isGated && (
+              <div
+                className="google-popout-overlay"
+                title="Đăng nhập để mở đầy đủ"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onOpenAuth?.('login')
+                }}
+              >
+                <Lock size={13} />
+                <span>Xem thử 3 trang</span>
+              </div>
+            )}
           </div>
 
-          {/* Thanh phân quyền bên dưới khung xem */}
+          {/* Thanh bên dưới khung xem */}
           {isGated ? (
             <div className="office-gated-bar">
               <div className="office-gated-text">
                 <Lock size={18} />
                 <span>
-                  Bạn đang xem bản đầy đủ online. <strong>Đăng nhập hoặc đăng ký</strong> để tải file gốc về máy.
+                  Bạn đang xem bản xem thử (3 trang). <strong>Đăng nhập hoặc đăng ký</strong> tài khoản miễn phí để tải file gốc đầy đủ về máy.
                 </span>
               </div>
               <button
@@ -241,7 +277,7 @@ export default function PdfViewer({
           ) : (
             onDownload && (
               <div className="office-download-bar">
-                <span>Bạn đang xem bản đầy đủ. Bạn có thể tải file gốc về máy để chỉnh sửa.</span>
+                <span>Bạn đang xem bản đầy đủ online. Bạn có thể tải file gốc về máy để chỉnh sửa.</span>
                 <button
                   type="button"
                   className="btn btn-primary btn-sm"
