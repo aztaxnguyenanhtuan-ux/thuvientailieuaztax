@@ -115,7 +115,7 @@ export async function loginUser(email, password) {
     const msg = (error.message || '').toLowerCase()
     if (msg.includes('email not confirmed')) {
       throw new Error(
-        'Email của bạn chưa được xác thực. Vui lòng kiểm tra hộp thư và bấm liên kết xác thực trước khi đăng nhập.',
+        'Email của bạn chưa được xác thực. Vui lòng kiểm tra hộp thư (bao gồm cả thư mục Spam/Thư rác) và bấm liên kết xác thực trước khi đăng nhập.',
       )
     }
     if (msg.includes('invalid login credentials')) {
