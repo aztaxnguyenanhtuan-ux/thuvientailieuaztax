@@ -54,7 +54,7 @@ export default function RegisterModal() {
         phone: form.phone,
       })
       setSuccess(
-        'Đăng ký thành công! Nếu dự án bật xác nhận email, hãy kiểm tra hộp thư trước khi đăng nhập.',
+        'Đăng ký thành công! Vui lòng kiểm tra hộp thư email của bạn để xác thực tài khoản trước khi đăng nhập.',
       )
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Đăng ký thất bại')
