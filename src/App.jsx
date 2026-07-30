@@ -4,6 +4,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import RegisterModal from './components/auth/RegisterModal'
 import ResetPasswordModal from './components/auth/ResetPasswordModal'
 import DownloadModal from './components/DownloadModal'
+import ErrorBoundary from './components/ErrorBoundary'
 import Footer from './components/Footer'
 import Header from './components/Header'
 import Lightbox from './components/Lightbox'
@@ -20,38 +21,42 @@ import './App.css'
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppProvider>
-        <BrowserRouter>
-          <div className="app-shell">
-            <Header />
-            <main className="main-content">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/tai-lieu/:id" element={<DocumentDetail />} />
-                <Route path="/infographic" element={<InfographicPage />} />
-                <Route path="/thu-vien" element={<MyLibrary />} />
-                <Route
-                  path="/admin"
-                  element={
-                    <ProtectedRoute roles={ROLES.ADMIN}>
-                      <AdminCMS />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </main>
-            <Footer />
-            <DownloadModal />
-            <LoginModal />
-            <RegisterModal />
-            <ResetPasswordModal />
-            <Lightbox />
-            <Toast />
-          </div>
-        </BrowserRouter>
-      </AppProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppProvider>
+          <BrowserRouter>
+            <div className="app-shell">
+              <Header />
+              <main className="main-content">
+                <ErrorBoundary>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/tai-lieu/:id" element={<DocumentDetail />} />
+                    <Route path="/infographic" element={<InfographicPage />} />
+                    <Route path="/thu-vien" element={<MyLibrary />} />
+                    <Route
+                      path="/admin"
+                      element={
+                        <ProtectedRoute roles={ROLES.ADMIN}>
+                          <AdminCMS />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </ErrorBoundary>
+              </main>
+              <Footer />
+              <DownloadModal />
+              <LoginModal />
+              <RegisterModal />
+              <ResetPasswordModal />
+              <Lightbox />
+              <Toast />
+            </div>
+          </BrowserRouter>
+        </AppProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }

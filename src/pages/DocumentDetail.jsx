@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import DocumentCard from '../components/DocumentCard'
 import PdfViewer from '../components/PdfViewer'
+import ErrorBoundary from '../components/ErrorBoundary'
 import { getCategoryLabel } from '../data/constants'
 import { useApp } from '../context/AppContext'
 import { useDocuments } from '../hooks/useData'
@@ -192,14 +193,16 @@ export default function DocumentDetail() {
               </h2>
               {preview ? (
                 <div className={`preview-card-container ${isGated ? 'gated' : ''}`}>
-                  <PdfViewer
-                    file={preview}
-                    title={doc.title}
-                    docType={doc.type}
-                    isGated={isGated}
-                    onOpenAuth={setAuthModal}
-                    onDownload={user ? () => requestDownload(doc) : null}
-                  />
+                  <ErrorBoundary>
+                    <PdfViewer
+                      file={preview}
+                      title={doc.title}
+                      docType={doc.type}
+                      isGated={isGated}
+                      onOpenAuth={setAuthModal}
+                      onDownload={user ? () => requestDownload(doc) : null}
+                    />
+                  </ErrorBoundary>
                 </div>
               ) : (
                 <div className="preview-placeholder">
