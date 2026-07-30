@@ -16,11 +16,7 @@ export default function Footer() {
             />
           </div>
           <p className="footer-tagline">
-            Thư viện tài liệu kế toán – thuế – pháp lý
-            <br />
-            dành riêng cho doanh nghiệp FDI tại Việt&nbsp;Nam.
-            <br />
-            Cập nhật 2026.
+            Thư viện tài liệu Kế toán – Thuế – Pháp lý dành riêng cho doanh nghiệp FDI tại Việt Nam.
           </p>
         </div>
         <div>
@@ -29,6 +25,44 @@ export default function Footer() {
           <Link to="/infographic">Infographic</Link>
           <Link to="/thu-vien">Thư viện của tôi</Link>
           {/* CMS chỉ hiện với admin — ẩn link công khai */}
+        </div>
+        <div>
+          <h4>Dịch vụ</h4>
+          <a
+            href="https://aztax.com.vn/dich-vu-ke-toan-cho-cong-ty-fdi/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Kế Toán FDI
+          </a>
+          <a
+            href="https://aztax.com.vn/dich-vu-thanh-lap-cong-ty-nuoc-ngoai-aztax/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Thành Lập Công Ty
+          </a>
+          <a
+            href="https://azvlaw.vn/dich-vu-tu-van-dau-tu/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Tư vấn đầu tư
+          </a>
+          <a
+            href="https://azvlaw.vn/dich-vu-lam-giay-phep-lao-dong/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Giấy phép lao động
+          </a>
+          <a
+            href="https://azvlaw.vn/dich-vu-lam-the-tam-tru/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Thẻ Tạm Trú
+          </a>
         </div>
         <div className="footer-contact">
           <h4>Liên hệ</h4>

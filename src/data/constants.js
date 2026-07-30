@@ -9,7 +9,7 @@ export const CATEGORIES = [
   { id: 'Nhân sự', label: 'Nhân sự', short: 'Nhân sự' },
   { id: 'Chính sách mới', label: 'Chính sách mới', short: 'Chính sách' },
   { id: 'Biểu mẫu', label: 'Biểu mẫu', short: 'Biểu mẫu' },
-  { id: 'Sai sót', label: 'Sai sót', short: 'Sai sót' },
+  { id: 'Sai sót thường gặp', label: 'Sai sót thường gặp', short: 'Sai sót' },
 ]
 
 /** Alias (slug cũ / biến thể) → giá trị category chuẩn trên Supabase */
@@ -27,8 +27,10 @@ const CATEGORY_ALIASES = {
   'chính sách': 'Chính sách mới',
   'bieu-mau': 'Biểu mẫu',
   'biểu mẫu': 'Biểu mẫu',
-  'sai-sot': 'Sai sót',
-  'sai sót': 'Sai sót',
+  'sai-sot': 'Sai sót thường gặp',
+  'sai sót': 'Sai sót thường gặp',
+  'sai sót thường gặp': 'Sai sót thường gặp',
+  'sai-sot-thuong-gap': 'Sai sót thường gặp',
 }
 
 /**
@@ -222,7 +224,7 @@ export const CONTACT = {
   phone: '0932 383 089',
   phoneHref: 'tel:0932383089',
   /** Hotline hiển thị footer (định dạng quốc tế) */
-  hotline: '(+84) 932 383 089',
+  hotline: '0932 383 089',
   email: 'cs@aztax.com.vn',
   hours: 'Thứ 2 - Thứ 6, 08:00 - 18:00',
   company: 'AZTAX Co., LTD',

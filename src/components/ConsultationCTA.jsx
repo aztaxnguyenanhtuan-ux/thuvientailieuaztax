@@ -2,7 +2,13 @@ import { useState } from 'react'
 import { CONTACT } from '../data/constants'
 import { saveLead } from '../services/api'
 import { useApp } from '../context/AppContext'
-import { ChevronDown, Phone } from './icons'
+import { ChevronDown, Phone, Clock, CheckCircle2 } from './icons'
+
+const NEED_CATEGORIES = [
+  'Khóa học kế toán FDI',
+  'Dịch vụ kế toán FDI',
+  'Tư vấn khác',
+]
 
 export default function ConsultationCTA() {
   const { showToast } = useApp()
@@ -11,6 +17,7 @@ export default function ConsultationCTA() {
     email: '',
     phone: '',
     company: '',
+    consultCategory: 'Khóa học kế toán FDI',
     need: '',
   })
   const [done, setDone] = useState(false)
@@ -19,12 +26,12 @@ export default function ConsultationCTA() {
   const onSubmit = async (e) => {
     e.preventDefault()
     if (!form.fullName.trim() || !form.email.trim() || !form.phone.trim()) {
-      showToast('Vui lòng điền họ tên, email và số điện thoại.', 'info')
+      showToast('Vui lòng điền Họ và tên, Email và Số điện thoại.', 'info')
       return
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(form.email.trim())) {
-      showToast('Email không đúng định dạng. Vui lòng nhập lại.', 'info')
+      showToast('Email không hợp lệ. Vui lòng kiểm tra lại.', 'info')
       return
     }
     const phoneRegex = /^[0-9\s+().-]{8,15}$/
@@ -32,6 +39,11 @@ export default function ConsultationCTA() {
       showToast('Số điện thoại không hợp lệ.', 'info')
       return
     }
+
+    const detailNeed = form.need.trim()
+      ? `[Category: ${form.consultCategory}] ${form.need.trim()}`
+      : `[Category: ${form.consultCategory}]`
+
     setSubmitting(true)
     try {
       await saveLead({
@@ -39,11 +51,11 @@ export default function ConsultationCTA() {
         email: form.email.trim(),
         phone: form.phone.trim(),
         company: form.company.trim(),
-        need: form.need.trim(),
+        need: detailNeed,
         source: 'consultation-cta',
       })
       setDone(true)
-      showToast('Đã gửi yêu cầu tư vấn. AZTAX sẽ liên hệ sớm!')
+      showToast('Đã gửi yêu cầu tư vấn! AZTAX sẽ liên hệ lại sớm.')
     } catch (err) {
       showToast(err.message || 'Gửi không thành công.', 'info')
     } finally {
@@ -59,28 +71,31 @@ export default function ConsultationCTA() {
         </div>
 
         <div className="cta-hero-card">
-          <span className="eyebrow light">Tư vấn cá nhân</span>
-          <h2>Bạn chưa tìm thấy tài liệu phù hợp?</h2>
+          <span className="eyebrow light">Tư vấn Kế toán FDI</span>
+          <h2>Bạn đang cần tư vấn về Kế toán FDI?</h2>
           <p className="cta-lead">
-            Nhận tư vấn miễn phí từ chuyên gia kế toán FDI của AZTAX.
+            Dù bạn đang tìm hiểu khóa học hay cần dịch vụ kế toán cho doanh nghiệp FDI, hãy để lại thông tin.
             <br />
-            Mô tả nhu cầu — chúng tôi sẽ gợi ý bộ tài liệu và quy trình phù hợp.
+            Chuyên gia AZTAX sẽ liên hệ và hỗ trợ tư vấn miễn phí.
           </p>
 
           <a href={CONTACT.phoneHref} className="cta-phone">
-            <Phone size={20} />
+            <Phone size={18} />
             {CONTACT.phone}
           </a>
 
           <div className="cta-form-wrap">
             {done ? (
               <div className="download-success compact">
-                <div className="success-icon">✓</div>
-                <h3>Đã nhận yêu cầu!</h3>
-                <p>Chuyên gia AZTAX sẽ liên hệ trong giờ làm việc.</p>
+                <div className="success-icon" style={{ color: '#004aad' }}>
+                  <CheckCircle2 size={40} />
+                </div>
+                <h3>Đã nhận thông tin đăng ký!</h3>
+                <p>Chuyên gia AZTAX sẽ liên hệ hỗ trợ bạn trong vòng 24 giờ làm việc.</p>
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"
+                  style={{ marginTop: '1rem' }}
                   onClick={() => {
                     setDone(false)
                     setForm({
@@ -88,6 +103,7 @@ export default function ConsultationCTA() {
                       email: '',
                       phone: '',
                       company: '',
+                      consultCategory: 'Khóa học kế toán FDI',
                       need: '',
                     })
                   }}
@@ -97,29 +113,50 @@ export default function ConsultationCTA() {
               </div>
             ) : (
               <>
-                <h3>Form tư vấn miễn phí</h3>
-                <form className="lead-form" onSubmit={onSubmit}>
-                  <label>
-                    <span className="field-label">
-                      Họ và tên<span className="req">*</span>
+                <h3>Để lại thông tin nhận tư vấn miễn phí</h3>
+                <form className="lead-form" onSubmit={onSubmit} noValidate>
+                  {/* Need Selection Chips */}
+                  <div className="form-group-need">
+                    <span className="field-label-group">
+                      Nhu cầu bạn đang quan tâm:<span className="req">*</span>
                     </span>
-                    <input
-                      value={form.fullName}
-                      onChange={(e) =>
-                        setForm({ ...form, fullName: e.target.value })
-                      }
-                    />
-                  </label>
+                    <div
+                      className="need-selector-grid"
+                      role="radiogroup"
+                      aria-label="Nhu cầu tư vấn"
+                    >
+                      {NEED_CATEGORIES.map((cat) => {
+                        const isSelected = form.consultCategory === cat
+                        return (
+                          <button
+                            key={cat}
+                            type="button"
+                            role="radio"
+                            aria-checked={isSelected}
+                            className={`need-chip-btn ${isSelected ? 'active' : ''}`}
+                            onClick={() =>
+                              setForm({ ...form, consultCategory: cat })
+                            }
+                          >
+                            <span className="chip-radio" />
+                            <span className="chip-label">{cat}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
                   <div className="form-row">
                     <label>
                       <span className="field-label">
-                        Email<span className="req">*</span>
+                        Họ và tên<span className="req">*</span>
                       </span>
                       <input
-                        type="email"
-                        value={form.email}
+                        type="text"
+                        placeholder="Nhập họ và tên"
+                        value={form.fullName}
                         onChange={(e) =>
-                          setForm({ ...form, email: e.target.value })
+                          setForm({ ...form, fullName: e.target.value })
                         }
                       />
                     </label>
@@ -129,6 +166,7 @@ export default function ConsultationCTA() {
                       </span>
                       <input
                         type="tel"
+                        placeholder="Nhập số điện thoại"
                         value={form.phone}
                         onChange={(e) =>
                           setForm({ ...form, phone: e.target.value })
@@ -136,15 +174,36 @@ export default function ConsultationCTA() {
                       />
                     </label>
                   </div>
-                  <label>
-                    <span className="field-label">Công ty</span>
-                    <input
-                      value={form.company}
-                      onChange={(e) =>
-                        setForm({ ...form, company: e.target.value })
-                      }
-                    />
-                  </label>
+
+                  <div className="form-row">
+                    <label>
+                      <span className="field-label">
+                        Email<span className="req">*</span>
+                      </span>
+                      <input
+                        type="email"
+                        placeholder="Nhập email"
+                        value={form.email}
+                        onChange={(e) =>
+                          setForm({ ...form, email: e.target.value })
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span className="field-label">
+                        Công ty (không bắt buộc)
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Nhập tên công ty"
+                        value={form.company}
+                        onChange={(e) =>
+                          setForm({ ...form, company: e.target.value })
+                        }
+                      />
+                    </label>
+                  </div>
+
                   <label>
                     <span className="field-label">Nhu cầu tư vấn</span>
                     <textarea
@@ -153,17 +212,22 @@ export default function ConsultationCTA() {
                       onChange={(e) =>
                         setForm({ ...form, need: e.target.value })
                       }
-                      placeholder="Ví dụ: setup kế toán cho công ty FDI mới, checklist thanh tra..."
+                      placeholder="Ví dụ: cần tư vấn khóa học kế toán FDI / setup kế toán cho công ty FDI mới..."
                     />
                   </label>
+
                   <button
                     type="submit"
-                    className="btn btn-secondary btn-block btn-lg"
+                    className="btn btn-secondary btn-block btn-lg cta-submit-btn"
                     disabled={submitting}
                   >
-                    {submitting ? 'Đang gửi...' : 'Tư vấn ngay'}
-                    {!submitting && <ChevronDown size={18} />}
+                    {submitting ? 'Đang gửi...' : 'Nhận tư vấn miễn phí'}
                   </button>
+
+                  <p className="form-sla-note">
+                    <Clock size={14} />
+                    <span>Chúng tôi sẽ liên hệ trong vòng 24 giờ làm việc</span>
+                  </p>
                 </form>
               </>
             )}
