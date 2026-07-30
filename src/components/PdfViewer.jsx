@@ -73,11 +73,18 @@ export default function PdfViewer({
   onOpenAuth,
   onDownload,
 }) {
+  const getInitialWidth = () => {
+    if (typeof window !== 'undefined' && window.innerWidth) {
+      return Math.min(window.innerWidth - 32, 700)
+    }
+    return 340
+  }
+
   const [numPages, setNumPages] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [gatedMobilePage, setGatedMobilePage] = useState(1)
   const [scale, setScale] = useState(1.0)
-  const [containerWidth, setContainerWidth] = useState(700)
+  const [containerWidth, setContainerWidth] = useState(getInitialWidth)
   const [loadError, setLoadError] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [progress, setProgress] = useState(0)

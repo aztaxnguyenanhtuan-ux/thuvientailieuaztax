@@ -1,3 +1,44 @@
+/* ========== GLOBAL VIEWPORT & OVERFLOW PROTECTION ========== */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  .detail-page,
+  .detail-layout,
+  .detail-main,
+  .preview-section,
+  .preview-card-container,
+  .pdf-viewer-root,
+  .office-viewer-wrapper,
+  .office-iframe-box {
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .office-iframe {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
 .app-shell {
   min-height: 100svh;
   display: flex;
