@@ -3269,9 +3269,11 @@
 
 @media (max-width: 768px) {
   .office-iframe-box {
-    height: 70vh;
-    min-height: 600px;
-    max-height: 780px;
+    height: 55vh !important;
+    min-height: 380px !important;
+    max-height: 500px !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
   .office-header-action span {
     display: none;

@@ -74,6 +74,11 @@ export default function DocumentDetail() {
     return 'https://docs.google.com/document/d/13oU0MVtF6mgq2NQw99nNt0GnaVK1naMU/preview'
   }, [doc, user])
 
+  // Tự động cuộn lên đầu trang và reset viewport khi chuyển tài liệu
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [id])
+
   // Console.log debug thông tin đường dẫn xem thử khi người dùng truy cập trang chi tiết
   useEffect(() => {
     if (doc) {

@@ -60,9 +60,10 @@ export function formatGooglePreviewUrl(rawUrl = '') {
 }
 
 /**
- * Component PdfViewer tối ưu cho Mobile (đặc biệt iOS Safari):
- * - Ưu tiên tuyệt đối Google Viewer iframe để load mượt mà, không bị lag/timeout.
- * - Chỉ fallback sang react-pdf khi file là local/blob/raw PDF không thể nhúng Google.
+ * Component PdfViewer được tối ưu hóa đặc biệt cho Mobile & iOS Safari:
+ * - Ưu tiên tuyệt đối Google Docs / Drive Viewer (iframe) trên Mobile / iOS Safari để tránh giật lag, treo máy.
+ * - Tối ưu hóa bộ nhớ WebKit (cleanup iframe khi unmount, giới hạn chiều cao iframe trên mobile).
+ * - Nếu phải dùng react-pdf: render duy nhất 1 trang tại 1 thời điểm, giảm DPR & scale, tắt layer phụ.
  */
 export default function PdfViewer({
   file,
@@ -82,23 +83,48 @@ export default function PdfViewer({
   const [progress, setProgress] = useState(0)
   const [timedOut, setTimedOut] = useState(false)
   const [retryKey, setRetryKey] = useState(0)
-  const containerRef = useRef(null)
 
-  // Nhận biết màn hình di động (< 680px)
+  const containerRef = useRef(null)
+  const iframeRef = useRef(null)
+
+  // Nhận biết thiết bị di động & iOS Safari
+  const isIOS = useMemo(() => {
+    if (typeof window === 'undefined') return false
+    return (
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    )
+  }, [])
+
   const isMobileWidth = containerWidth < 680
 
-  // 1. Ưu tiên sử dụng Google Docs / Drive Viewer cho tất cả các URL hợp lệ
+  const isMobile = useMemo(() => {
+    if (typeof window === 'undefined') return false
+    return (
+      isIOS ||
+      isMobileWidth ||
+      /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+    )
+  }, [isIOS, isMobileWidth])
+
+  // 1. Ưu tiên tuyệt đối Google Docs / Drive Viewer cho tất cả URL trên Mobile / iOS Safari
   const isGoogleLink = useMemo(() => {
     if (typeof file !== 'string') return false
     const str = file.trim()
-    if (!str || str === '#') return true // Fallback Google preview
+    if (!str || str === '#') return true
+
+    // Trên Mobile & iOS Safari: Luôn dùng Google Viewer cho tất cả HTTP/HTTPS URL để đảm bảo 60fps mượt mà
+    if (isMobile && (str.startsWith('http://') || str.startsWith('https://'))) {
+      return true
+    }
+
     return (
       str.includes('docs.google.com') ||
       str.includes('drive.google.com') ||
       str.startsWith('http://') ||
       str.startsWith('https://')
     )
-  }, [file])
+  }, [file, isMobile])
 
   const formattedGoogleUrl = useMemo(() => {
     if (!isGoogleLink) return ''
@@ -111,7 +137,6 @@ export default function PdfViewer({
     const typeStr = String(docType || '').toUpperCase().trim()
     const urlStr = String(file || '').toLowerCase().split('?')[0]
 
-    // Nếu URL kết thúc bằng .pdf ➜ Chắc chắn là PDF
     if (urlStr.endsWith('.pdf')) return false
 
     if (['DOC', 'DOCX', 'WORD', 'XLS', 'XLSX', 'EXCEL'].includes(typeStr)) {
@@ -127,15 +152,18 @@ export default function PdfViewer({
     )
   }, [isGoogleLink, docType, file])
 
-  // Log URL ra console dễ kiểm tra đường dẫn
+  // Cleanup iframe khi unmount để giải phóng bộ nhớ WebKit (tránh rò rỉ RAM trên iOS Safari)
   useEffect(() => {
-    if (file) {
-      console.log(
-        `[AZTAX Viewer] URL (${isGoogleLink ? 'Google' : isDirectOfficeFile ? 'Office' : 'PDF'}):`,
-        file,
-      )
+    return () => {
+      if (iframeRef.current) {
+        try {
+          iframeRef.current.src = 'about:blank'
+        } catch (e) {
+          // ignore
+        }
+      }
     }
-  }, [file, retryKey, isGoogleLink, isDirectOfficeFile])
+  }, [])
 
   // Cấu hình cMapUrl & Font cho react-pdf
   const pdfOptions = useMemo(
@@ -147,7 +175,7 @@ export default function PdfViewer({
     [],
   )
 
-  // Tự động đo chiều rộng container
+  // Đo chiều rộng container
   const updateWidth = useCallback(() => {
     if (containerRef.current) {
       const width = containerRef.current.clientWidth
@@ -220,7 +248,7 @@ export default function PdfViewer({
   const gatedMaxPages = numPages ? Math.min(3, numPages) : 3
 
   // ==========================================
-  // TRƯỜNG HỢP 1: TÀI LIỆU GOOGLE DOCS / DRIVE LINK (isGoogleLink = true)
+  // TRƯỜNG HỢP 1: GOOGLE DOCS / DRIVE VIEWER (isGoogleLink = true)
   // ==========================================
   if (isGoogleLink) {
     if (!formattedGoogleUrl || formattedGoogleUrl === '#') {
@@ -240,7 +268,7 @@ export default function PdfViewer({
           <div className="office-header-bar">
             <div className="office-header-left">
               <span className="chip doc-category-chip" style={{ background: '#eaf2fb', color: '#004aad' }}>
-                Google Docs / Drive
+                Google Drive
               </span>
               <span className="office-header-title" title={title}>{title}</span>
             </div>
@@ -260,6 +288,7 @@ export default function PdfViewer({
 
           <div className="office-iframe-box" style={{ position: 'relative' }}>
             <iframe
+              ref={iframeRef}
               title={`Xem thử Google ${title}`}
               src={formattedGoogleUrl}
               className="office-iframe"
@@ -268,7 +297,7 @@ export default function PdfViewer({
               allowFullScreen
             />
 
-            {/* Khi CHƯA ĐĂNG NHẬP (isGated = true): Phủ lớp overlay mờ bo tròn sang trọng đè đĩa icon pop-out Google Drive */}
+            {/* Khi CHƯA ĐĂNG NHẬP: Overlay hỗ trợ khóa 3 trang xem thử */}
             {isGated && (
               <div
                 className="google-popout-overlay"
@@ -290,7 +319,7 @@ export default function PdfViewer({
               <div className="office-gated-text">
                 <Lock size={18} />
                 <span>
-                  Bạn đang xem bản xem thử (3 trang). <strong>Đăng nhập hoặc đăng ký</strong> tài khoản miễn phí để tải file gốc đầy đủ về máy.
+                  Bạn đang xem bản xem thử. <strong>Đăng nhập hoặc đăng ký</strong> tài khoản miễn phí để tải file gốc đầy đủ.
                 </span>
               </div>
               <button
@@ -304,7 +333,7 @@ export default function PdfViewer({
           ) : (
             onDownload && (
               <div className="office-download-bar">
-                <span>Bạn đang xem bản đầy đủ online. Bạn có thể tải file gốc về máy để chỉnh sửa.</span>
+                <span>Bạn đang xem bản đầy đủ online. Có thể tải file gốc về máy.</span>
                 <button
                   type="button"
                   className="btn btn-primary btn-sm"
@@ -321,7 +350,7 @@ export default function PdfViewer({
   }
 
   // ==========================================
-  // TRƯỜNG HỢP 2: FILE WORD / EXCEL TRỰC TIẾP TRÊN SUPABASE STORAGE (isDirectOfficeFile = true)
+  // TRƯỜNG HỢP 2: FILE WORD / EXCEL TRỰC TIẾP (isDirectOfficeFile = true)
   // ==========================================
   if (isDirectOfficeFile) {
     const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(
@@ -340,6 +369,7 @@ export default function PdfViewer({
 
           <div className="office-iframe-box">
             <iframe
+              ref={iframeRef}
               title={`Xem full MS Office ${title}`}
               src={officeViewerUrl}
               className="office-iframe"
@@ -383,11 +413,15 @@ export default function PdfViewer({
   }
 
   // ==========================================
-  // TRƯỜNG HỢP 3: FILE PDF (isGoogleLink = false, isDirectOfficeFile = false)
+  // TRƯỜNG HỢP 3: FILE LOCAL / BLOB PDF (react-pdf fallback)
   // ==========================================
+  const activePageNumber = isGated ? gatedMobilePage : currentPage
+  const activeScale = isMobile ? Math.min(scale, 0.85) : scale
+  const activeDpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 1.5)
+
   return (
     <div className="pdf-viewer-root" ref={containerRef}>
-      {/* PDF Toolbar (Thanh công cụ khi ĐÃ ĐĂNG NHẬP) */}
+      {/* PDF Toolbar khi đã đăng nhập */}
       {!isGated && numPages && numPages > 0 && (
         <div className="pdf-toolbar">
           <div className="pdf-toolbar-group">
@@ -504,12 +538,11 @@ export default function PdfViewer({
             }
             error={null}
           >
-            {/* CHẾ ĐỘ CHƯA ĐĂNG NHẬP ➜ TỐI ƯU HÓA RENDER MOBILE DẠNG 1 TRANG TẠI MỘT THỜI ĐIỂM */}
-            {isGated && (
+            {/* RENDER TRÊN MOBILE VÀ KHI CHƯA ĐĂNG NHẬP: CHỈ 1 TRANG TẠI MỘT THỜI ĐIỂM ĐỂ GIẢM VRAM SAFARI */}
+            {isMobile || isGated ? (
               <div className="pdf-gated-stack">
-                {isMobileWidth ? (
-                  /* RENDER TRÊN MOBILE (< 680px): CHỈ 1 TRANG TẠI MỘT THỜI ĐIỂM ĐỂ KHÔNG QUÁ TẢI VRAM IPHONE */
-                  <div className="pdf-mobile-gated-wrap" style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div className="pdf-mobile-gated-wrap" style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  {isGated && (
                     <div className="pdf-mobile-nav" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', background: '#ffffff', padding: '0.4rem 0.85rem', borderRadius: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
                       <button
                         type="button"
@@ -517,7 +550,7 @@ export default function PdfViewer({
                         style={{ width: '36px', height: '36px', minHeight: '36px' }}
                         onClick={() => setGatedMobilePage((p) => Math.max(1, p - 1))}
                         disabled={gatedMobilePage <= 1}
-                        title="Trang xem thử trước"
+                        title="Trang trước"
                       >
                         <ChevronLeft size={16} />
                       </button>
@@ -530,25 +563,27 @@ export default function PdfViewer({
                         style={{ width: '36px', height: '36px', minHeight: '36px' }}
                         onClick={() => setGatedMobilePage((p) => Math.min(gatedMaxPages, p + 1))}
                         disabled={gatedMobilePage >= gatedMaxPages}
-                        title="Trang xem thử tiếp theo"
+                        title="Trang tiếp theo"
                       >
                         <ChevronRight size={16} />
                       </button>
                     </div>
+                  )}
 
-                    <div className="pdf-page-item">
-                      <Page
-                        key={`mobile-gated-page-${gatedMobilePage}`}
-                        pageNumber={gatedMobilePage}
-                        width={containerWidth}
-                        scale={scale}
-                        devicePixelRatio={Math.min(window.devicePixelRatio || 1, 1.5)}
-                        renderTextLayer={false}
-                        renderAnnotationLayer={false}
-                      />
-                      <span className="pdf-page-badge">Trang {gatedMobilePage} / {gatedMaxPages}</span>
-                    </div>
+                  <div className="pdf-page-item">
+                    <Page
+                      key={`page-render-${activePageNumber}`}
+                      pageNumber={activePageNumber}
+                      width={containerWidth}
+                      scale={activeScale}
+                      devicePixelRatio={activeDpr}
+                      renderTextLayer={false}
+                      renderAnnotationLayer={false}
+                    />
+                    <span className="pdf-page-badge">Trang {activePageNumber} / {numPages || gatedMaxPages}</span>
+                  </div>
 
+                  {isGated && (
                     <div className="preview-locked-card" style={{ marginTop: '0.75rem' }}>
                       <div className="lock-icon">
                         <Lock size={28} />
@@ -568,49 +603,11 @@ export default function PdfViewer({
                         Đăng nhập để xem tiếp & Tải xuống
                       </button>
                     </div>
-                  </div>
-                ) : (
-                  /* RENDER TRÊN DESKTOP (>= 680px): XẾP CHỒNG 3 TRANG ĐẦU */
-                  <>
-                    {Array.from({ length: gatedMaxPages }, (_, index) => (
-                      <div key={`gated-page-${index + 1}`} className="pdf-page-item">
-                        <Page
-                          pageNumber={index + 1}
-                          width={containerWidth}
-                          scale={scale}
-                          renderTextLayer={false}
-                          renderAnnotationLayer={false}
-                        />
-                        <span className="pdf-page-badge">Trang {index + 1}</span>
-                      </div>
-                    ))}
-
-                    <div className="preview-locked-card">
-                      <div className="lock-icon">
-                        <Lock size={32} />
-                      </div>
-                      <h3>
-                        Đã xem hết {gatedMaxPages}/{numPages || 10} trang xem thử
-                      </h3>
-                      <p>
-                        Đăng nhập hoặc đăng ký tài khoản AZTAX miễn phí để xem tiếp các
-                        trang còn lại và tải file gốc đầy đủ.
-                      </p>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-lg"
-                        onClick={() => onOpenAuth?.('login')}
-                      >
-                        Đăng nhập để xem tiếp & Tải xuống
-                      </button>
-                    </div>
-                  </>
-                )}
+                  )}
+                </div>
               </div>
-            )}
-
-            {/* CHẾ ĐỘ ĐÃ ĐĂNG NHẬP ➜ RENDER TRANG HIỆN TẠI (KÈM THANH ĐIỀU HƯỚNG) */}
-            {!isGated && numPages && (
+            ) : (
+              /* RENDER TRÊN DESKTOP KHI ĐÃ ĐĂNG NHẬP */
               <div className="pdf-single-page-wrap">
                 <div className="pdf-page-item">
                   <Page
