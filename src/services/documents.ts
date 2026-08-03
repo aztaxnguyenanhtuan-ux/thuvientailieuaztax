@@ -21,7 +21,6 @@ const DOCUMENT_COLUMNS = [
   'preview_3pages_url',
   'view_preview_url',
   'direct_download_url',
-  'storage_path',
   'created_at',
 ] as const
 
@@ -93,13 +92,13 @@ function asStringArray(value: unknown): string[] {
 }
 
 /**
- * Tự động chuyển đổi `storage_path` hoặc relative path từ Supabase Storage
- * thành Public URL hoàn chỉnh (ví dụ: https://...supabase.co/storage/v1/object/public/documents/file.pdf).
+ * Tự động chuyển đổi relative path từ Supabase Storage
+ * thành Public URL hoàn chỉnh.
  */
 export function resolveSupabaseStorageUrl(rawUrl: string, defaultBucket = 'documents'): string {
-  if (!rawUrl || rawUrl === '#') return '#'
+  if (!rawUrl || rawUrl === '#') return ''
   const s = rawUrl.trim()
-  if (!s || s === '#') return '#'
+  if (!s || s === '#') return ''
 
   // 1. Nếu đã là URL đầy đủ (http://, https://), giữ nguyên
   if (/^https?:\/\//i.test(s)) {
@@ -159,21 +158,23 @@ export function normalizeDocument(row: DocumentRow): DocumentItem {
     badgeTags.push('Popular')
   }
 
-  // Tự động nhận diện preview_3pages_url, view_preview_url trước tiên từ Supabase
+  // Chỉ dùng 3 trường: preview_3pages_url, view_preview_url, direct_download_url
   const rawPreview3Pages = asString(
     pick(row, 'preview_3pages_url', 'preview_3_pages_url', 'preview_3pages', 'preview_3_pages'),
     '',
   )
   const rawPreview = asString(
-    pick(row, 'view_preview_url', 'preview_url', 'preview_path', 'preview', 'storage_path'),
-    '#',
+    pick(row, 'view_preview_url', 'preview_url', 'preview_path', 'preview'),
+    '',
   )
   const rawDownload = asString(
-    pick(row, 'direct_download_url', 'download_url', 'file_url', 'storage_path', 'url'),
-    '#',
+    pick(row, 'direct_download_url', 'download_url', 'file_url', 'url'),
+    '',
   )
 
   const resolvedPreview3Pages = rawPreview3Pages ? resolveSupabaseStorageUrl(rawPreview3Pages, 'documents') : ''
+  const resolvedPreview = rawPreview ? resolveSupabaseStorageUrl(rawPreview, 'documents') : ''
+  const resolvedDownload = rawDownload ? resolveSupabaseStorageUrl(rawDownload, 'documents') : ''
 
   return {
     id: id || `doc-${Math.random().toString(36).slice(2, 9)}`,
@@ -185,8 +186,8 @@ export function normalizeDocument(row: DocumentRow): DocumentItem {
     thumbnail_url: asString(pick(row, 'thumbnail_url', 'thumbnail', 'image_url')),
     icon: asString(pick(row, 'icon', 'icon_name'), 'file-text'),
     preview_3pages_url: resolvedPreview3Pages || undefined,
-    view_preview_url: resolveSupabaseStorageUrl(rawPreview, 'documents'),
-    direct_download_url: resolveSupabaseStorageUrl(rawDownload, 'documents'),
+    view_preview_url: resolvedPreview,
+    direct_download_url: resolvedDownload,
     year,
     featured,
     popular,

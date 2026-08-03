@@ -35,6 +35,19 @@ export default function DocumentDetail() {
       .slice(0, 3)
   }, [documents, doc])
 
+  const hasDownloadUrl = useMemo(() => {
+    if (!doc) return false
+    return (
+      typeof doc.direct_download_url === 'string' &&
+      doc.direct_download_url.trim() !== '' &&
+      doc.direct_download_url.trim() !== '#'
+    )
+  }, [doc])
+
+  /**
+   * Tính toán link preview từ 2 trường: view_preview_url & preview_3pages_url.
+   * Loại bỏ hoàn toàn storage_path và các fallback cũ.
+   */
   const preview = useMemo(() => {
     if (!doc) return null
 
@@ -43,11 +56,11 @@ export default function DocumentDetail() {
 
     if (user) {
       // 1. Khi ĐÃ ĐĂNG NHẬP:
-      // a. Ưu tiên tuyệt đối view_preview_url (bản đầy đủ)
+      // a. Ưu tiên view_preview_url (bản đầy đủ)
       if (isValidUrl(doc.view_preview_url)) {
         return doc.view_preview_url.trim()
       }
-      // b. Nếu không có thì dùng preview_3pages_url
+      // b. Nếu không có thì dùng preview_3pages_url (bản 3 trang)
       if (isValidUrl(doc.preview_3pages_url)) {
         return doc.preview_3pages_url.trim()
       }
@@ -57,42 +70,19 @@ export default function DocumentDetail() {
       if (isValidUrl(doc.preview_3pages_url)) {
         return doc.preview_3pages_url.trim()
       }
-      // b. Nếu không có thì dùng view_preview_url
+      // b. Nếu không có thì dùng view_preview_url (bản đầy đủ)
       if (isValidUrl(doc.view_preview_url)) {
         return doc.view_preview_url.trim()
       }
     }
 
-    // Các đường dẫn dự phòng khác nếu có
-    if (isValidUrl(doc.storage_path)) {
-      return doc.storage_path.trim()
-    }
-    if (isValidUrl(doc.direct_download_url)) {
-      return doc.direct_download_url.trim()
-    }
-
-    // Fallback mặc định dùng link Google Drive xem thử mượt mà
-    return 'https://docs.google.com/document/d/13oU0MVtF6mgq2NQw99nNt0GnaVK1naMU/preview'
+    return null
   }, [doc, user])
 
-  // Tự động cuộn lên đầu trang và reset viewport khi chuyển tài liệu
+  // Tự động cuộn lên đầu trang khi chuyển tài liệu
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [id])
-
-  // Console.log debug thông tin đường dẫn xem thử khi người dùng truy cập trang chi tiết
-  useEffect(() => {
-    if (doc) {
-      console.log('--------------------------------------------------')
-      console.log('[DEBUG DocumentDetail] ID:', doc.id)
-      console.log('[DEBUG DocumentDetail] Status:', user ? 'ĐÃ ĐĂNG NHẬP (User logged in)' : 'CHƯA ĐĂNG NHẬP (Guest)')
-      console.log('[DEBUG DocumentDetail] doc.preview_3pages_url (3 trang):', doc.preview_3pages_url)
-      console.log('[DEBUG DocumentDetail] doc.view_preview_url (Full):', doc.view_preview_url)
-      console.log('[DEBUG DocumentDetail] doc.direct_download_url:', doc.direct_download_url)
-      console.log('[DEBUG DocumentDetail] Final Selected Preview URL:', preview)
-      console.log('--------------------------------------------------')
-    }
-  }, [doc, user, preview])
 
   if (loading) {
     return (
@@ -167,7 +157,7 @@ export default function DocumentDetail() {
                   <LogIn size={16} /> Đăng nhập để tải xuống
                 </button>
               ) : (
-                <>
+                preview && hasDownloadUrl && (
                   <button
                     type="button"
                     className="btn btn-primary"
@@ -175,16 +165,16 @@ export default function DocumentDetail() {
                   >
                     <Download size={16} /> Tải xuống nhanh
                   </button>
-                  <button
-                    type="button"
-                    className={`btn btn-outline ${saved ? 'active-save' : ''}`}
-                    onClick={() => toggleSave(doc.id)}
-                  >
-                    {saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
-                    {saved ? 'Đã lưu' : 'Lưu vào thư viện'}
-                  </button>
-                </>
+                )
               )}
+              <button
+                type="button"
+                className={`btn btn-outline ${saved ? 'active-save' : ''}`}
+                onClick={() => toggleSave(doc.id)}
+              >
+                {saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
+                {saved ? 'Đã lưu' : 'Lưu vào thư viện'}
+              </button>
             </div>
 
             <section className="preview-section">
@@ -200,23 +190,29 @@ export default function DocumentDetail() {
                       docType={doc.type}
                       isGated={isGated}
                       onOpenAuth={setAuthModal}
-                      onDownload={user ? () => requestDownload(doc) : null}
+                      onDownload={user && hasDownloadUrl ? () => requestDownload(doc) : null}
                     />
                   </ErrorBoundary>
                 </div>
               ) : (
-                <div className="preview-placeholder">
-                  <DocIcon name={doc.icon} size={48} />
-                  <h3>{doc.title}</h3>
-                  <p>
-                    Bản xem thử đang được cập nhật. Bạn vẫn có thể tải xuống
-                    nhanh sau khi điền form (hoặc đăng nhập).
+                <div
+                  className="pdf-error-box"
+                  style={{
+                    padding: '2.5rem 1.5rem',
+                    textAlign: 'center',
+                    background: '#ffffff',
+                    borderRadius: '12px',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  }}
+                >
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>⚠️</div>
+                  <h3 style={{ fontSize: '1.2rem', color: '#1e293b', marginBottom: '0.5rem', fontWeight: 600 }}>
+                    Tài liệu không khả dụng. Vui lòng liên hệ quản trị viên.
+                  </h3>
+                  <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
+                    Liên kết xem thử của tài liệu này hiện chưa sẵn sàng hoặc đang được cập nhật.
                   </p>
-                  <ul>
-                    <li>Định dạng: {doc.type}</li>
-                    <li>Năm cập nhật: {doc.year}</li>
-                    <li>Nhóm: {categoryLabel}</li>
-                  </ul>
                 </div>
               )}
             </section>
