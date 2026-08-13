@@ -16,9 +16,13 @@ export default function DownloadModal() {
   const [form, setForm] = useState(empty)
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  const [downloaded, setDownloaded] = useState(false)
 
   useEffect(() => {
-    if (!downloadDoc) return undefined
+    if (!downloadDoc) {
+      setDownloaded(false)
+      return undefined
+    }
     if (user) {
       setForm({
         fullName: user.fullName || '',
@@ -31,6 +35,7 @@ export default function DownloadModal() {
       setForm(empty)
     }
     setErrors({})
+    setDownloaded(false)
     document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = ''
@@ -59,6 +64,17 @@ export default function DownloadModal() {
       submitDownloadLead(form)
       setSubmitting(false)
     }, 500)
+  }
+
+  const handleDirectDownload = () => {
+    setDownloaded(true)
+    if (downloadDoc?.id) {
+      trackDownload(downloadDoc.id, downloadDoc.downloads_count)
+    }
+    // Tự động đóng popup sau 2 giây khi bấm Tải xuống trực tiếp
+    setTimeout(() => {
+      setDownloadDoc(null)
+    }, 2000)
   }
 
   const downloadUrl =
@@ -171,10 +187,11 @@ export default function DownloadModal() {
         ) : (
           <div className="download-success">
             <div className="success-icon">✓</div>
-            <h2>Sẵn sàng tải xuống!</h2>
+            <h2>{downloaded ? 'Tài liệu đã được tải xuống thành công!' : 'Sẵn sàng tải xuống!'}</h2>
             <p>
-              Cảm ơn <strong>{downloadDoc.lead?.fullName || user?.fullName}</strong>.
-              Liên kết tải xuống đã sẵn sàng bên dưới.
+              {downloaded
+                ? 'Cửa sổ sẽ tự động đóng sau 2 giây...'
+                : 'Bấm nút bên dưới để tải trực tiếp file gốc về máy.'}
             </p>
             <p className="modal-doc-name">{downloadDoc.title}</p>
             {downloadUrl ? (
@@ -183,14 +200,10 @@ export default function DownloadModal() {
                 href={downloadUrl}
                 target="_blank"
                 rel="noreferrer"
-                onClick={() => {
-                  if (downloadDoc?.id) {
-                    trackDownload(downloadDoc.id, downloadDoc.downloads_count)
-                  }
-                }}
+                onClick={handleDirectDownload}
               >
                 <Download size={18} />
-                Tải xuống trực tiếp
+                {downloaded ? 'Đang tải về máy...' : 'Tải xuống trực tiếp'}
               </a>
             ) : (
               <div className="coming-soon-box">
@@ -202,13 +215,6 @@ export default function DownloadModal() {
                 </span>
               </div>
             )}
-            <button
-              type="button"
-              className="btn btn-outline btn-block"
-              onClick={() => setDownloadDoc(null)}
-            >
-              Đóng
-            </button>
           </div>
         )}
       </div>
