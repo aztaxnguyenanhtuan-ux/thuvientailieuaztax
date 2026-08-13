@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useApp } from '../context/AppContext'
 import {
   Download,
@@ -53,6 +53,7 @@ export function formatGooglePreviewUrl(rawUrl = '') {
  * Component PdfViewer nhúng Google Viewer qua Iframe:
  * - Tự động chuyển link về dạng /preview
  * - Hỗ trợ Chế độ mở rộng (Expanded View) khi bấm nút 4 ô nhỏ (LayoutGrid)
+ * - Đóng chế độ mở rộng bằng phím ESC hoặc click bên ngoài
  */
 export default function PdfViewer({
   file,
@@ -65,6 +66,25 @@ export default function PdfViewer({
   const iframeRef = useRef(null)
   const { user } = useApp()
   const [isExpanded, setIsExpanded] = useState(false)
+
+  // Lắng nghe phím ESC để đóng chế độ mở rộng
+  useEffect(() => {
+    if (!isExpanded) return undefined
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.code === 'Escape') {
+        setIsExpanded(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [isExpanded])
 
   const formattedGoogleUrl = useMemo(() => {
     return formatGooglePreviewUrl(file)
@@ -180,8 +200,16 @@ export default function PdfViewer({
 
       {/* CHẾ ĐỘ MỞ RỘNG (EXPANDED VIEW MODAL) */}
       {isExpanded && (
-        <div className="office-viewer-expanded-overlay" role="dialog" aria-modal="true">
-          <div className="office-viewer-expanded-container">
+        <div
+          className="office-viewer-expanded-overlay"
+          onClick={() => setIsExpanded(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="office-viewer-expanded-container"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="pdf-expanded-toolbar">
               <div className="pdf-expanded-toolbar-left">
                 <span className="chip doc-category-chip" style={{ background: '#eaf2fb', color: '#004aad' }}>
