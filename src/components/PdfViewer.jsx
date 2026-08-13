@@ -5,7 +5,6 @@ import {
   LayoutGrid,
   Lock,
   Minimize2,
-  Zap,
 } from './icons'
 
 /**
@@ -54,7 +53,6 @@ export function formatGooglePreviewUrl(rawUrl = '') {
  * Component PdfViewer nhúng Google Viewer qua Iframe:
  * - Tự động chuyển link về dạng /preview
  * - Hỗ trợ Chế độ mở rộng (Expanded View) khi bấm nút 4 ô nhỏ (LayoutGrid)
- * - Hiển thị nút "Tải xuống nhanh" bên cạnh nút "Tải xuống" trong toolbar khi mở rộng
  */
 export default function PdfViewer({
   file,
@@ -63,7 +61,6 @@ export default function PdfViewer({
   isGated = true,
   onOpenAuth,
   onDownload,
-  onQuickDownload,
 }) {
   const iframeRef = useRef(null)
   const { user } = useApp()
@@ -87,14 +84,6 @@ export default function PdfViewer({
         </div>
       </div>
     )
-  }
-
-  const handleQuickClick = () => {
-    if (onQuickDownload) {
-      onQuickDownload()
-    } else if (onDownload) {
-      onDownload()
-    }
   }
 
   return (
@@ -202,29 +191,16 @@ export default function PdfViewer({
               </div>
 
               <div className="pdf-expanded-toolbar-right">
-                {/* 1. Nút Tải xuống (Hiển thị nếu có handler) */}
+                {/* Nút Tải xuống (Hiển thị nếu có handler) */}
                 {onDownload && (
                   <button
                     type="button"
-                    className="btn btn-outline btn-sm pdf-toolbar-btn"
+                    className="btn btn-primary btn-sm pdf-toolbar-btn"
                     onClick={onDownload}
                     title="Tải file gốc"
                   >
                     <Download size={15} />
                     <span>Tải xuống</span>
-                  </button>
-                )}
-
-                {/* 2. Nút "Tải xuống nhanh" — Đặt ngay sát bên phải nút "Tải xuống", chỉ hiện khi User đã đăng nhập & đang ở Chế độ mở rộng */}
-                {user && (
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-sm pdf-toolbar-btn quick-download-btn"
-                    onClick={handleQuickClick}
-                    title="Tải xuống nhanh (Cửa sổ tự đóng sau 2 giây)"
-                  >
-                    <Zap size={15} />
-                    <span>Tải xuống nhanh</span>
                   </button>
                 )}
 

@@ -216,13 +216,6 @@ export default function DocumentDetail() {
                             }
                           : null
                       }
-                      onQuickDownload={
-                        user && hasDownloadUrl
-                          ? () => {
-                              requestDownload({ ...doc, autoStart: true })
-                            }
-                          : null
-                      }
                     />
                   </ErrorBoundary>
                 </div>
