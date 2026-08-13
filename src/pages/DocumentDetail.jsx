@@ -19,7 +19,7 @@ import { DocIcon } from '../components/icons'
 export default function DocumentDetail() {
   const { id } = useParams()
   const { documents, loading } = useDocuments()
-  const { savedIds, toggleSave, requestDownload, user, setAuthModal, trackDownload } = useApp()
+  const { savedIds, toggleSave, requestDownload, user, setAuthModal } = useApp()
 
   const doc = useMemo(
     () => documents.find((d) => d.id === id),
@@ -210,10 +210,7 @@ export default function DocumentDetail() {
                       onOpenAuth={setAuthModal}
                       onDownload={
                         user && hasDownloadUrl
-                          ? () => {
-                              trackDownload(doc.id, doc.downloads_count)
-                              requestDownload(doc)
-                            }
+                          ? () => requestDownload(doc)
                           : null
                       }
                     />
