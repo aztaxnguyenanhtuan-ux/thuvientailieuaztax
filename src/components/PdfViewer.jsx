@@ -1,8 +1,12 @@
-import { useMemo, useRef } from 'react'
+import { useState, useMemo, useRef } from 'react'
+import { useApp } from '../context/AppContext'
 import {
   Download,
   ExternalLink,
+  LayoutGrid,
   Lock,
+  Minimize2,
+  Zap,
 } from './icons'
 
 /**
@@ -50,9 +54,8 @@ export function formatGooglePreviewUrl(rawUrl = '') {
 /**
  * Component PdfViewer nhúng Google Viewer qua Iframe:
  * - Tự động chuyển link về dạng /preview
- * - Ẩn nút mở tab mới khi chưa đăng nhập (isGated = true)
- * - Hiển thị bản 3 trang (chưa đăng nhập) hoặc bản đầy đủ (đã đăng nhập)
- * - Hiển thị thông báo lỗi lịch sự nếu URL không khả dụng
+ * - Hỗ trợ Chế độ mở rộng (Expanded View) khi bấm nút 4 ô nhỏ (LayoutGrid)
+ * - Hiển thị nút "Tải xuống nhanh" bên cạnh nút "Tải xuống" trong toolbar khi mở rộng
  */
 export default function PdfViewer({
   file,
@@ -61,8 +64,11 @@ export default function PdfViewer({
   isGated = true,
   onOpenAuth,
   onDownload,
+  onQuickDownload,
 }) {
   const iframeRef = useRef(null)
+  const { user } = useApp()
+  const [isExpanded, setIsExpanded] = useState(false)
 
   const formattedGoogleUrl = useMemo(() => {
     return formatGooglePreviewUrl(file)
@@ -84,6 +90,14 @@ export default function PdfViewer({
     )
   }
 
+  const handleQuickClick = () => {
+    if (onQuickDownload) {
+      onQuickDownload()
+    } else if (onDownload) {
+      onDownload()
+    }
+  }
+
   return (
     <div className="pdf-viewer-root">
       <div className="office-viewer-wrapper">
@@ -100,19 +114,33 @@ export default function PdfViewer({
             </span>
             <span className="office-header-title" title={title}>{title}</span>
           </div>
-          {/* Ẩn nút mở tab mới khi chưa đăng nhập */}
-          {!isGated && formattedGoogleUrl && (
-            <a
-              href={formattedGoogleUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+
+          <div className="office-header-right" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            {/* Nút Mở rộng (icon có 4 ô nhỏ) */}
+            <button
+              type="button"
               className="office-header-action"
-              title="Mở tài liệu trong cửa sổ/tab mới"
+              onClick={() => setIsExpanded(true)}
+              title="Chế độ xem mở rộng"
             >
-              <ExternalLink size={14} />
-              <span>Xem toàn màn hình</span>
-            </a>
-          )}
+              <LayoutGrid size={15} />
+              <span>Mở rộng</span>
+            </button>
+
+            {/* Nút xem toàn màn hình tab mới (chỉ hiện khi đã đăng nhập) */}
+            {!isGated && formattedGoogleUrl && (
+              <a
+                href={formattedGoogleUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="office-header-action"
+                title="Mở tài liệu trong cửa sổ/tab mới"
+              >
+                <ExternalLink size={14} />
+                <span>Mở tab mới</span>
+              </a>
+            )}
+          </div>
         </div>
 
         <div className="office-iframe-box" style={{ position: 'relative' }}>
@@ -174,6 +202,71 @@ export default function PdfViewer({
           )
         )}
       </div>
+
+      {/* CHẾ ĐỘ MỞ RỘNG (EXPANDED VIEW MODAL) */}
+      {isExpanded && (
+        <div className="office-viewer-expanded-overlay" role="dialog" aria-modal="true">
+          <div className="office-viewer-expanded-container">
+            <div className="pdf-expanded-toolbar">
+              <div className="pdf-expanded-toolbar-left">
+                <span className="chip doc-category-chip" style={{ background: '#eaf2fb', color: '#004aad' }}>
+                  {isGated ? 'Xem thử' : 'Bản đầy đủ'}
+                </span>
+                <h3 className="pdf-expanded-title">{title}</h3>
+              </div>
+
+              <div className="pdf-expanded-toolbar-right">
+                {/* 1. Nút Tải xuống (Hiển thị nếu có handler) */}
+                {onDownload && (
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm pdf-toolbar-btn"
+                    onClick={onDownload}
+                    title="Tải file gốc"
+                  >
+                    <Download size={15} />
+                    <span>Tải xuống</span>
+                  </button>
+                )}
+
+                {/* 2. Nút "Tải xuống nhanh" — Đặt ngay sát bên phải nút "Tải xuống", chỉ hiện khi User đã đăng nhập & đang ở Chế độ mở rộng */}
+                {user && (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm pdf-toolbar-btn quick-download-btn"
+                    onClick={handleQuickClick}
+                    title="Tải xuống nhanh (Cửa sổ tự đóng sau 2 giây)"
+                  >
+                    <Zap size={15} />
+                    <span>Tải xuống nhanh</span>
+                  </button>
+                )}
+
+                {/* 3. Nút Thu nhỏ / Đóng chế độ mở rộng */}
+                <button
+                  type="button"
+                  className="pdf-expanded-close-btn"
+                  onClick={() => setIsExpanded(false)}
+                  title="Đóng chế độ mở rộng"
+                  aria-label="Đóng mở rộng"
+                >
+                  <Minimize2 size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="pdf-expanded-iframe-box">
+              <iframe
+                title={`Xem mở rộng Google ${title}`}
+                src={formattedGoogleUrl}
+                className="office-iframe"
+                allow="autoplay; fullscreen"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
