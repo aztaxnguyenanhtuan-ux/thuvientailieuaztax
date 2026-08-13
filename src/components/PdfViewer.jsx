@@ -2,7 +2,6 @@ import { useState, useMemo, useRef } from 'react'
 import { useApp } from '../context/AppContext'
 import {
   Download,
-  ExternalLink,
   LayoutGrid,
   Lock,
   Minimize2,
@@ -127,19 +126,6 @@ export default function PdfViewer({
               <span>Mở rộng</span>
             </button>
 
-            {/* Nút xem toàn màn hình tab mới (chỉ hiện khi đã đăng nhập) */}
-            {!isGated && formattedGoogleUrl && (
-              <a
-                href={formattedGoogleUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="office-header-action"
-                title="Mở tài liệu trong cửa sổ/tab mới"
-              >
-                <ExternalLink size={14} />
-                <span>Mở tab mới</span>
-              </a>
-            )}
           </div>
         </div>
 
