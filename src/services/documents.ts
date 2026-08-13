@@ -21,6 +21,8 @@ const DOCUMENT_COLUMNS = [
   'preview_3pages_url',
   'view_preview_url',
   'direct_download_url',
+  'downloads_count',
+  'last_downloaded_at',
   'created_at',
 ] as const
 
@@ -192,11 +194,60 @@ export function normalizeDocument(row: DocumentRow): DocumentItem {
     featured,
     popular,
     priority,
+    downloads_count: asNumber(pick(row, 'downloads_count', 'download_count', 'downloads'), 0),
+    last_downloaded_at: (() => {
+      const v = pick(row, 'last_downloaded_at', 'lastDownloadedAt')
+      return v == null || v === '' ? null : String(v)
+    })(),
     created_at: (() => {
       const v = pick(row, 'created_at', 'createdAt')
       return v == null || v === '' ? null : String(v)
     })(),
   }
+}
+
+/**
+ * Tăng lượt tải của tài liệu và cập nhật ngay vào bộ nhớ đệm
+ */
+export async function incrementDocumentDownloadCount(
+  docId: string,
+  currentCount = 0,
+): Promise<number> {
+  const newCount = currentCount + 1
+  const nowIso = new Date().toISOString()
+
+  if (documentsCache) {
+    const cachedDoc = documentsCache.find((d) => d.id === docId)
+    if (cachedDoc) {
+      cachedDoc.downloads_count = (cachedDoc.downloads_count || 0) + 1
+      cachedDoc.last_downloaded_at = nowIso
+    }
+  }
+
+  if (!isSupabaseConfigured || !supabase) {
+    return newCount
+  }
+
+  try {
+    const { error: rpcError } = await supabase.rpc('increment_download_count', { doc_id: docId })
+    if (rpcError) {
+      const { error: updateError } = await supabase
+        .from('documents')
+        .update({
+          downloads_count: newCount,
+          last_downloaded_at: nowIso,
+        })
+        .eq('id', docId)
+
+      if (updateError) {
+        console.warn('[documents] Could not update downloads_count in Supabase:', updateError.message)
+      }
+    }
+  } catch (err) {
+    console.warn('[documents] Failed to increment download count:', err)
+  }
+
+  return newCount
 }
 
 function createdAtTime(value: string | null | undefined): number {

@@ -13,6 +13,7 @@ import {
   saveLead,
   toggleLibraryItem,
 } from '../services/api'
+import { incrementDocumentDownloadCount } from '../services/documents'
 import type { DocumentItem } from '../types/document'
 import type { InfographicItem } from '../services/infographics'
 import type { AuthProfile } from '../lib/supabase'
@@ -42,6 +43,7 @@ export type AppContextValue = {
   toggleSave: (docId: string) => Promise<void>
   requestDownload: (doc: DocumentItem) => Promise<void>
   submitDownloadLead: (formData: any) => Promise<void>
+  trackDownload: (docId: string, currentCount?: number) => Promise<void>
   isSupabaseConfigured: boolean
 }
 
@@ -149,6 +151,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [downloadDoc, showToast],
   )
 
+  const trackDownload = useCallback(
+    async (docId: string, currentCount = 0) => {
+      // Chỉ tăng số lượt tải khi user đã đăng nhập
+      if (!user) return
+      await incrementDocumentDownloadCount(docId, currentCount)
+      setDownloadDoc((prev) =>
+        prev && prev.id === docId
+          ? { ...prev, downloads_count: (prev.downloads_count || 0) + 1 }
+          : prev,
+      )
+    },
+    [user],
+  )
+
   // Bridge: keep old setAuthModal('login'|'register') API for other components
   const setAuthModal = useCallback(
     (view: 'login' | 'register' | null) => {
@@ -182,6 +198,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toggleSave,
       requestDownload,
       submitDownloadLead,
+      trackDownload,
       isSupabaseConfigured: auth.isConfigured,
     }),
     [
@@ -202,6 +219,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toggleSave,
       requestDownload,
       submitDownloadLead,
+      trackDownload,
     ],
   )
 

@@ -32,8 +32,25 @@ create table if not exists public.documents (
   popular boolean default false,
   -- Số nhỏ hơn = ưu tiên cao hơn trong "Tài liệu nổi bật tháng này"
   priority integer not null default 100,
+  downloads_count integer not null default 0,
+  last_downloaded_at timestamptz,
   created_at date default current_date
 );
+
+-- Hàm tăng số lượt tải xuống tài liệu (dùng cho RPC)
+create or replace function public.increment_download_count(doc_id text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.documents
+  set downloads_count = coalesce(downloads_count, 0) + 1,
+      last_downloaded_at = now()
+  where id = doc_id;
+end;
+$$;
 
 -- ---------- infographics ----------
 create table if not exists public.infographics (

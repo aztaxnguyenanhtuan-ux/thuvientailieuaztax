@@ -19,7 +19,7 @@ import { DocIcon } from '../components/icons'
 export default function DocumentDetail() {
   const { id } = useParams()
   const { documents, loading } = useDocuments()
-  const { savedIds, toggleSave, requestDownload, user, setAuthModal } = useApp()
+  const { savedIds, toggleSave, requestDownload, user, setAuthModal, trackDownload } = useApp()
 
   const doc = useMemo(
     () => documents.find((d) => d.id === id),
@@ -147,7 +147,7 @@ export default function DocumentDetail() {
               </div>
             </div>
 
-            <div className="detail-actions">
+            <div className="detail-actions" style={{ flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem' }}>
               {!user ? (
                 <button
                   type="button"
@@ -175,6 +175,24 @@ export default function DocumentDetail() {
                 {saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
                 {saved ? 'Đã lưu' : 'Lưu vào thư viện'}
               </button>
+              {user && (
+                <div
+                  className="download-count-badge"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    padding: '0.55rem 0.95rem',
+                    background: '#eaf2fb',
+                    color: '#004aad',
+                    borderRadius: 'var(--radius-btn, 10px)',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  📥 Tải xuống ({new Intl.NumberFormat('vi-VN').format(doc.downloads_count || 0)} lượt)
+                </div>
+              )}
             </div>
 
             <section className="preview-section">
@@ -190,7 +208,14 @@ export default function DocumentDetail() {
                       docType={doc.type}
                       isGated={isGated}
                       onOpenAuth={setAuthModal}
-                      onDownload={user && hasDownloadUrl ? () => requestDownload(doc) : null}
+                      onDownload={
+                        user && hasDownloadUrl
+                          ? () => {
+                              trackDownload(doc.id, doc.downloads_count)
+                              requestDownload(doc)
+                            }
+                          : null
+                      }
                     />
                   </ErrorBoundary>
                 </div>
@@ -238,6 +263,12 @@ export default function DocumentDetail() {
                   <dt>Tags</dt>
                   <dd>{doc.tags?.join(', ')}</dd>
                 </div>
+                {user && (
+                  <div>
+                    <dt>Lượt tải</dt>
+                    <dd>📥 {new Intl.NumberFormat('vi-VN').format(doc.downloads_count || 0)} lượt</dd>
+                  </div>
+                )}
               </dl>
             </div>
             {related.length > 0 && (

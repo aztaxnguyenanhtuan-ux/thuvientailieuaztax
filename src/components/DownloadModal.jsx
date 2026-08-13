@@ -12,7 +12,7 @@ const empty = {
 }
 
 export default function DownloadModal() {
-  const { downloadDoc, setDownloadDoc, submitDownloadLead, user } = useApp()
+  const { downloadDoc, setDownloadDoc, submitDownloadLead, user, trackDownload } = useApp()
   const [form, setForm] = useState(empty)
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
@@ -183,6 +183,11 @@ export default function DownloadModal() {
                 href={downloadUrl}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => {
+                  if (downloadDoc?.id) {
+                    trackDownload(downloadDoc.id, downloadDoc.downloads_count)
+                  }
+                }}
               >
                 <Download size={18} />
                 Tải xuống trực tiếp

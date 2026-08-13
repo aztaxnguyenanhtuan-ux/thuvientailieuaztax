@@ -20,6 +20,8 @@ export type DocumentItem = {
    */
   priority?: number | null
   created_at?: string | null
+  downloads_count?: number
+  last_downloaded_at?: string | null
 }
 
 /** Row thô từ bảng public.documents (CSV import có thể lệch tên cột) */
