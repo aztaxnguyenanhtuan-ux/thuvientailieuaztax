@@ -45,8 +45,6 @@ export default function DocumentCard({ doc }: Props) {
           {doc.category && (
             <span className="chip doc-category-chip">{doc.category}</span>
           )}
-          <span className="doc-type">{doc.type}</span>
-          <span className="doc-year">{doc.year}</span>
         </div>
         <button
           type="button"
@@ -60,6 +58,7 @@ export default function DocumentCard({ doc }: Props) {
       </div>
 
       <h3 className="doc-title">{doc.title}</h3>
+      {doc.year && <span className="doc-card-year">Năm {doc.year}</span>}
       <p className="doc-desc">{doc.description}</p>
 
       <div className="doc-tags">

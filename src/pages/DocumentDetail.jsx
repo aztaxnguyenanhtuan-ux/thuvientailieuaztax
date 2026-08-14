@@ -125,8 +125,7 @@ export default function DocumentDetail() {
               <div>
                 <div className="detail-meta">
                   <span className="chip">{categoryLabel}</span>
-                  <span className="doc-type">{doc.type}</span>
-                  <span className="doc-year">{doc.year}</span>
+                  {doc.year && <span className="doc-card-year">Năm {doc.year}</span>}
                   {doc.tags?.map((t) => (
                     <span
                       key={t}

@@ -1033,6 +1033,21 @@ html, body {
   overflow: hidden;
 }
 
+.doc-card-year {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 0.1rem 0.45rem;
+  border-radius: 6px;
+  line-height: 1.3;
+  margin-top: -0.1rem;
+}
+
 .doc-desc {
   margin: 0;
   font-size: 0.88rem;
