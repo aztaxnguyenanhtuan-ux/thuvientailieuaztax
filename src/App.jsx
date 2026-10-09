@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import LoginModal from './components/auth/LoginModal'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import RegisterModal from './components/auth/RegisterModal'
@@ -19,12 +20,27 @@ import InfographicPage from './pages/InfographicPage'
 import MyLibrary from './pages/MyLibrary'
 import './App.css'
 
+function AnalyticsTracker() {
+  const location = useLocation()
+
+  useEffect(() => {
+    if (typeof window.gtag === 'function') {
+      window.gtag('config', 'G-G1H8WGCQDP', {
+        page_path: location.pathname + location.search,
+      })
+    }
+  }, [location])
+
+  return null
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
         <AppProvider>
           <BrowserRouter>
+            <AnalyticsTracker />
             <div className="app-shell">
               <Header />
               <main className="main-content">
