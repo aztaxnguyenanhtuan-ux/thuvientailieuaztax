@@ -1,5 +1,11 @@
 import { canonicalCategory, FEATURED_LIMIT } from '../data/constants'
-import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import {
+  isJwtError,
+  isSupabaseConfigured,
+  publicSupabase,
+  supabase,
+} from '../lib/supabase'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { DocumentItem, DocumentRow } from '../types/document'
 
 /**
@@ -291,9 +297,44 @@ export function clearDocumentsCache() {
   cacheTimestamp = 0
 }
 
+async function queryDocumentsFromClient(
+  client: SupabaseClient,
+): Promise<{ data: DocumentRow[] | null; error: Error | null }> {
+  const first = await client
+    .from('documents')
+    .select(DOCUMENT_SELECT_WITH_PRIORITY)
+    .order('featured', { ascending: false })
+    .order('popular', { ascending: false })
+    .order('year', { ascending: false })
+
+  if (!first.error) {
+    return { data: (first.data as unknown as DocumentRow[]) || [], error: null }
+  }
+
+  if (/priority/i.test(first.error.message)) {
+    if (import.meta.env.DEV) {
+      console.info('[documents] Cột priority chưa có — fetch không kèm priority')
+    }
+    const second = await client
+      .from('documents')
+      .select(DOCUMENT_SELECT)
+      .order('featured', { ascending: false })
+      .order('popular', { ascending: false })
+      .order('year', { ascending: false })
+
+    if (!second.error) {
+      return { data: (second.data as unknown as DocumentRow[]) || [], error: null }
+    }
+    return { data: null, error: new Error(second.error.message) }
+  }
+
+  return { data: null, error: new Error(first.error.message) }
+}
+
 /**
  * Lấy danh sách tài liệu chỉ từ Supabase `documents`.
  * Có bộ nhớ đệm (memory cache) giúp tải tức thì (0ms) khi chuyển trang.
+ * Tự động fallback sang public client nếu user session gặp lỗi JWT clock skew ("JWT issued at future").
  */
 export async function fetchDocuments(forceRefresh = false): Promise<DocumentItem[]> {
   if (!forceRefresh && documentsCache && Date.now() - cacheTimestamp < CACHE_TTL) {
@@ -304,48 +345,27 @@ export async function fetchDocuments(forceRefresh = false): Promise<DocumentItem
     throw new Error('Supabase chưa được cấu hình. Không thể tải tài liệu.')
   }
 
-  // Ưu tiên select kèm priority; nếu cột chưa tồn tại → fallback không có priority
-  let data: DocumentRow[] | null = null
-  let errorMessage: string | null = null
+  let res = await queryDocumentsFromClient(supabase)
 
-  {
-    const first = await supabase
-      .from('documents')
-      .select(DOCUMENT_SELECT_WITH_PRIORITY)
-      .order('featured', { ascending: false })
-      .order('popular', { ascending: false })
-      .order('year', { ascending: false })
-
-    if (!first.error) {
-      data = (first.data as unknown as DocumentRow[]) || []
-    } else if (/priority/i.test(first.error.message)) {
-      if (import.meta.env.DEV) {
-        console.info(
-          '[documents] Cột priority chưa có — fetch không kèm priority',
-        )
-      }
-      const second = await supabase
-        .from('documents')
-        .select(DOCUMENT_SELECT)
-        .order('featured', { ascending: false })
-        .order('popular', { ascending: false })
-        .order('year', { ascending: false })
-
-      if (second.error) {
-        errorMessage = second.error.message
-        console.error('[documents] Supabase error:', second.error.message, second.error)
-      } else {
-        data = (second.data as unknown as DocumentRow[]) || []
-      }
-    } else {
-      errorMessage = first.error.message
-      console.error('[documents] Supabase error:', first.error.message, first.error)
+  // Nếu gặp lỗi JWT (ví dụ "JWT issued at future" do clock skew giữa Auth và PostgREST hoặc máy người dùng):
+  // Tự động fallback sang publicSupabase (chỉ dùng Anon Key không đính kèm JWT session lỗi)
+  if (res.error && isJwtError(res.error) && publicSupabase) {
+    console.warn(
+      `[documents] Phát hiện lỗi JWT/clock skew ("${res.error.message}"). Tự động fallback sang public client...`,
+    )
+    const fallbackRes = await queryDocumentsFromClient(publicSupabase)
+    if (!fallbackRes.error && fallbackRes.data) {
+      res = fallbackRes
+      // Silent refresh token ở background
+      supabase.auth.refreshSession().catch(() => {})
     }
   }
 
-  if (errorMessage) {
-    throw new Error(`Không tải được tài liệu từ Supabase: ${errorMessage}`)
+  if (res.error) {
+    throw new Error(`Không tải được tài liệu từ Supabase: ${res.error.message}`)
   }
+
+  const data = res.data
 
   if (!data || data.length === 0) {
     if (import.meta.env.DEV) {

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import DocumentCard from '../components/DocumentCard'
 import { useApp } from '../context/AppContext'
@@ -7,6 +7,14 @@ import { useDocuments } from '../hooks/useData'
 export default function MyLibrary() {
   const { user, savedIds, setAuthModal } = useApp()
   const { documents, loading } = useDocuments()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    document.title = 'Tài liệu đã lưu — Thư viện AZTAX FDI'
+    return () => {
+      document.title = 'AZTAX — Kho tài liệu kế toán FDI miễn phí 2026'
+    }
+  }, [])
 
   const savedDocs = useMemo(
     () => documents.filter((d) => savedIds.includes(d.id)),

@@ -1,5 +1,10 @@
 import { canonicalInfoCategory } from '../data/constants'
-import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import {
+  isJwtError,
+  isSupabaseConfigured,
+  publicSupabase,
+  supabase,
+} from '../lib/supabase'
 
 export type InfographicItem = {
   id: string
@@ -223,11 +228,30 @@ export async function fetchInfographics(forceRefresh = false): Promise<Infograph
     throw new Error('Supabase chưa được cấu hình. Không thể tải infographic.')
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('infographics')
     .select(INFO_SELECT)
     .order('year', { ascending: false })
     .order('title', { ascending: true })
+
+  // Nếu gặp lỗi JWT (ví dụ "JWT issued at future" do clock skew):
+  // Tự động fallback sang publicSupabase
+  if (error && isJwtError(error) && publicSupabase) {
+    console.warn(
+      `[infographics] Phát hiện lỗi JWT/clock skew ("${error.message}"). Tự động fallback sang public client...`,
+    )
+    const fallback = await publicSupabase
+      .from('infographics')
+      .select(INFO_SELECT)
+      .order('year', { ascending: false })
+      .order('title', { ascending: true })
+    if (!fallback.error && fallback.data) {
+      data = fallback.data
+      error = null
+      // Silent refresh token ở background
+      supabase.auth.refreshSession().catch(() => {})
+    }
+  }
 
   if (error) {
     console.error('[infographics] Supabase error:', error.message, error)

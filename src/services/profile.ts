@@ -1,5 +1,5 @@
 import { DEFAULT_ROLE, normalizeRole, type AppRole } from '../lib/roles'
-import { supabase, type AuthProfile } from '../lib/supabase'
+import { isJwtError, supabase, type AuthProfile } from '../lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
 /** Cột thực tế trên bảng public.profiles */
@@ -44,7 +44,8 @@ export async function fetchProfileFromDb(
         error.details,
       )
       if (attempt < retries) {
-        await wait(150 * (attempt + 1))
+        const isClockSkew = isJwtError(error)
+        await wait(isClockSkew ? 1000 * (attempt + 1) : 150 * (attempt + 1))
         continue
       }
       return null

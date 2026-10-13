@@ -79,10 +79,16 @@ export default function DocumentDetail() {
     return null
   }, [doc, user])
 
-  // Tự động cuộn lên đầu trang khi chuyển tài liệu
+  // Tự động cuộn lên đầu trang & cập nhật tiêu đề trang theo tài liệu
   useEffect(() => {
     window.scrollTo(0, 0)
-  }, [id])
+    if (doc?.title) {
+      document.title = `${doc.title} — Thư viện AZTAX FDI`
+    }
+    return () => {
+      document.title = 'AZTAX — Kho tài liệu kế toán FDI miễn phí 2026'
+    }
+  }, [id, doc])
 
   if (loading) {
     return (

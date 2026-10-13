@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import InfographicGallery from '../components/InfographicGallery'
 import { useInfographics } from '../hooks/useData'
@@ -5,6 +6,14 @@ import { ChevronLeft } from '../components/icons'
 
 export default function InfographicPage() {
   const { infographics, loading, error } = useInfographics()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    document.title = 'Infographic Kế toán & Thuế FDI 2026 — AZTAX'
+    return () => {
+      document.title = 'AZTAX — Kho tài liệu kế toán FDI miễn phí 2026'
+    }
+  }, [])
 
   return (
     <div className="gallery-page">
