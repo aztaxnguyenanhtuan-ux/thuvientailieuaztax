@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { fetchInfographics, getCachedInfographics } from '../services/api'
 import { useDocuments } from './useDocuments'
 
@@ -9,9 +10,6 @@ export function useInfographics() {
   const [error, setError] = useState(null)
 
   const load = async (force = false) => {
-    if (infographics.length === 0) {
-      setLoading(true)
-    }
     try {
       const data = await fetchInfographics(force)
       setInfographics(data)

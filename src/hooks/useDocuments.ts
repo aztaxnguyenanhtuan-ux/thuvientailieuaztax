@@ -8,13 +8,6 @@ export function useDocuments() {
   const [error, setError] = useState<string | null>(null)
 
   const reload = useCallback(async (force = false) => {
-    // Chỉ bật spinner nếu chưa có tài liệu nào hiển thị
-    setDocuments((current) => {
-      if (current.length === 0) {
-        setLoading(true)
-      }
-      return current
-    })
     try {
       const data = await fetchDocuments(force)
       setDocuments(data)
