@@ -16,11 +16,45 @@ export default function Home() {
   useEffect(() => {
     if (location.hash) {
       const id = location.hash.replace('#', '')
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
       }, 100)
+      return () => clearTimeout(timer)
     }
-  }, [location])
+
+    // Khôi phục vị trí cuộn khi người dùng back lại từ trang chi tiết tài liệu
+    const savedY = sessionStorage.getItem('aztax_home_scroll_y')
+    const lastDocId = sessionStorage.getItem('aztax_last_viewed_doc_id')
+
+    if (!docsLoading && savedY !== null) {
+      const y = parseInt(savedY, 10)
+      if (!Number.isNaN(y)) {
+        const timer = setTimeout(() => {
+          window.scrollTo({ top: y, behavior: 'instant' })
+
+          if (lastDocId) {
+            const cardEl = document.getElementById(`doc-card-${lastDocId}`)
+            if (cardEl) {
+              const rect = cardEl.getBoundingClientRect()
+              if (rect.top < 0 || rect.bottom > window.innerHeight) {
+                cardEl.scrollIntoView({ block: 'nearest', behavior: 'instant' })
+              }
+            }
+          }
+        }, 50)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [location, docsLoading])
+
+  // Tự động ghi nhớ vị trí cuộn khi rời khỏi trang Home
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && window.scrollY > 0) {
+        sessionStorage.setItem('aztax_home_scroll_y', String(window.scrollY))
+      }
+    }
+  }, [])
 
   return (
     <>

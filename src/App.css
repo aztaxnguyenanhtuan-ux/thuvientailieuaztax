@@ -2164,6 +2164,13 @@ html, body {
   font-weight: 600;
   color: var(--navy-mid);
   margin-bottom: 1.25rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
 
 .back-link:hover {

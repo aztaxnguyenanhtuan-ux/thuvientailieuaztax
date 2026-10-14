@@ -60,7 +60,18 @@ export default function Header() {
   return (
     <header className="site-header">
       <div className="header-inner">
-        <Link to="/" className="brand" onClick={() => setOpenMenu(false)}>
+        <Link
+          to="/"
+          className="brand"
+          onClick={() => {
+            setOpenMenu(false)
+            if (typeof window !== 'undefined') {
+              sessionStorage.removeItem('aztax_home_scroll_y')
+              sessionStorage.removeItem('aztax_last_viewed_doc_id')
+              window.scrollTo({ top: 0, behavior: 'smooth' })
+            }
+          }}
+        >
           <img
             className="brand-logo"
             src="https://aztax.com.vn/wp-content/uploads/2023/02/LOGO_AZ_TAX_FINAL-1-1024x512.png.webp"

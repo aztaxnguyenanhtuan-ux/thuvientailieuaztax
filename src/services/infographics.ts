@@ -216,6 +216,16 @@ export function clearInfographicsCache() {
 }
 
 /**
+ * Lấy cache infographics đồng bộ (0ms) nếu còn trong thời hạn TTL.
+ */
+export function getCachedInfographics(): InfographicItem[] | null {
+  if (infographicsCache && Date.now() - infoCacheTimestamp < INFO_CACHE_TTL) {
+    return infographicsCache
+  }
+  return null
+}
+
+/**
  * Lấy danh sách infographic chỉ từ Supabase.
  * Có bộ nhớ đệm (memory cache) giúp tải tức thì (0ms) khi xem/lọc.
  */

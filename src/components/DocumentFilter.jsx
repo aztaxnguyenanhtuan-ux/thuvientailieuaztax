@@ -1,16 +1,45 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CATEGORIES, PAGE_SIZE, matchesCategory } from '../data/constants'
 import DocumentCard from './DocumentCard'
 import { Search, ChevronDown } from './icons'
+
+const FILTER_STORAGE_KEY = 'aztax_doc_filter_state'
+
+function loadSavedFilterState() {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = sessionStorage.getItem(FILTER_STORAGE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch {
+    // ignore
+  }
+  return null
+}
 
 export default function DocumentFilter({
   documents = [],
   initialCategory = 'all',
 }) {
-  const [category, setCategory] = useState(initialCategory)
-  const [year, setYear] = useState('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [visible, setVisible] = useState(PAGE_SIZE)
+  const savedState = useMemo(() => loadSavedFilterState(), [])
+  const [category, setCategory] = useState(() => savedState?.category || initialCategory)
+  const [year, setYear] = useState(() => savedState?.year || 'all')
+  const [searchQuery, setSearchQuery] = useState(() => savedState?.searchQuery || '')
+  const [visible, setVisible] = useState(() =>
+    typeof savedState?.visible === 'number' && savedState.visible > 0
+      ? savedState.visible
+      : PAGE_SIZE,
+  )
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        FILTER_STORAGE_KEY,
+        JSON.stringify({ category, year, searchQuery, visible }),
+      )
+    } catch {
+      // ignore
+    }
+  }, [category, year, searchQuery, visible])
 
   // Dynamic year extraction from document list
   const availableYears = useMemo(() => {

@@ -133,11 +133,16 @@ export async function logoutUser() {
 }
 
 /** @deprecated Dùng services/documents.ts — re-export để CMS/Admin tương thích */
-export { fetchDocuments, normalizeDocument as normalizeDoc } from './documents'
+export {
+  fetchDocuments,
+  getCachedDocuments,
+  normalizeDocument as normalizeDoc,
+} from './documents'
 
 /** @deprecated Dùng services/infographics.ts — re-export tương thích */
 export {
   fetchInfographics,
+  getCachedInfographics,
   normalizeInfographic as normalizeInfo,
   isUsableUrl,
 } from './infographics'

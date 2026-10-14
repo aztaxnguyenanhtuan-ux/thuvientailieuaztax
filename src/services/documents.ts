@@ -297,6 +297,16 @@ export function clearDocumentsCache() {
   cacheTimestamp = 0
 }
 
+/**
+ * Lấy cache documents đồng bộ (0ms) nếu còn trong thời hạn TTL.
+ */
+export function getCachedDocuments(): DocumentItem[] | null {
+  if (documentsCache && Date.now() - cacheTimestamp < CACHE_TTL) {
+    return documentsCache
+  }
+  return null
+}
+
 async function queryDocumentsFromClient(
   client: SupabaseClient,
 ): Promise<{ data: DocumentRow[] | null; error: Error | null }> {

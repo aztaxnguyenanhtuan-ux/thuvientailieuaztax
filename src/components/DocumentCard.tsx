@@ -22,8 +22,15 @@ export default function DocumentCard({ doc }: Props) {
   const saved = savedIds.includes(doc.id)
   const badge = pickBadge(doc)
 
+  const handleViewDetail = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('aztax_home_scroll_y', String(window.scrollY))
+      sessionStorage.setItem('aztax_last_viewed_doc_id', doc.id)
+    }
+  }
+
   return (
-    <article className="doc-card">
+    <article className="doc-card" id={`doc-card-${doc.id}`}>
       <div className="doc-card-top">
         <div className="doc-icon-wrap">
           <DocIcon name={doc.icon} size={24} />
@@ -80,7 +87,11 @@ export default function DocumentCard({ doc }: Props) {
       </div>
 
       <div className="doc-actions">
-        <Link to={`/tai-lieu/${doc.id}`} className="btn btn-primary btn-sm doc-btn-detail">
+        <Link
+          to={`/tai-lieu/${doc.id}`}
+          className="btn btn-primary btn-sm doc-btn-detail"
+          onClick={handleViewDetail}
+        >
           <Eye size={18} strokeWidth={2.25} className="doc-btn-icon" aria-hidden />
           Chi tiết & Xem thử
         </Link>

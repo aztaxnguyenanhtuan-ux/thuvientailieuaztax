@@ -125,6 +125,12 @@ export default function Hero({ documents = [], loading = false }) {
                       key={doc.id}
                       to={`/tai-lieu/${doc.id}`}
                       className="featured-item"
+                      onClick={() => {
+                        if (typeof window !== 'undefined') {
+                          sessionStorage.setItem('aztax_home_scroll_y', String(window.scrollY))
+                          sessionStorage.setItem('aztax_last_viewed_doc_id', doc.id)
+                        }
+                      }}
                     >
                       <span className={`tag ${badge.className}`}>{badge.text}</span>
                       <div>

@@ -1,23 +1,23 @@
-import { useEffect, useState } from 'react'
-import { fetchInfographics } from '../services/api'
+import { fetchInfographics, getCachedInfographics } from '../services/api'
 import { useDocuments } from './useDocuments'
 
 export { useDocuments }
 
 export function useInfographics() {
-  const [infographics, setInfographics] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [infographics, setInfographics] = useState(() => getCachedInfographics?.() || [])
+  const [loading, setLoading] = useState(() => !getCachedInfographics?.())
   const [error, setError] = useState(null)
 
-  const load = async () => {
-    setLoading(true)
+  const load = async (force = false) => {
+    if (infographics.length === 0) {
+      setLoading(true)
+    }
     try {
-      const data = await fetchInfographics()
+      const data = await fetchInfographics(force)
       setInfographics(data)
       setError(null)
     } catch (e) {
       setError(e?.message || 'Lỗi tải infographic')
-      setInfographics([])
     } finally {
       setLoading(false)
     }

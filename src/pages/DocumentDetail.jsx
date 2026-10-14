@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import DocumentCard from '../components/DocumentCard'
 import PdfViewer from '../components/PdfViewer'
 import ErrorBoundary from '../components/ErrorBoundary'
@@ -18,8 +18,17 @@ import { DocIcon } from '../components/icons'
 
 export default function DocumentDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { documents, loading } = useDocuments()
   const { savedIds, toggleSave, requestDownload, user, setAuthModal } = useApp()
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+    } else {
+      navigate('/#kho-tai-lieu')
+    }
+  }
 
   const doc = useMemo(
     () => documents.find((d) => d.id === id),
@@ -118,9 +127,14 @@ export default function DocumentDetail() {
   return (
     <div className="detail-page">
       <div className="container">
-        <Link to="/#kho-tai-lieu" className="back-link">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="back-link"
+          aria-label="Quay lại kho tài liệu"
+        >
           <ChevronLeft size={16} /> Quay lại kho tài liệu
-        </Link>
+        </button>
 
         <div className="detail-layout">
           <div className="detail-main">
