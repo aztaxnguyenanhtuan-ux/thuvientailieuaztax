@@ -23,8 +23,8 @@ export default function Testimonial() {
       <div className="container">
         <div className="section-head light">
           <span className="eyebrow light">Kiểm chứng thực tế</span>
-          <h2>Tài liệu từ kinh nghiệm thực chiến</h2>
-          <p>Phục vụ mọi loại hình doanh nghiệp FDI</p>
+          <h2>Tài liệu kế toán FDI từ kinh nghiệm thực chiến</h2>
+          <p>Phục vụ mọi loại hình doanh nghiệp FDI tại Việt Nam</p>
         </div>
 
         <blockquote className="testimonial-quote">

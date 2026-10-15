@@ -5,6 +5,7 @@ import ConsultationCTA from '../components/ConsultationCTA'
 import DocumentFilter from '../components/DocumentFilter'
 import Hero from '../components/Hero'
 import InfographicGallery from '../components/InfographicGallery'
+import SeoFdiSection from '../components/SeoFdiSection'
 import Testimonial from '../components/Testimonial'
 import { useDocuments, useInfographics } from '../hooks/useData'
 
@@ -87,6 +88,7 @@ export default function Home() {
       )}
       {/* <BundleSection /> */}
       <Testimonial />
+      <SeoFdiSection />
       <ConsultationCTA />
     </>
   )

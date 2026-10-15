@@ -88,14 +88,30 @@ export default function DocumentDetail() {
     return null
   }, [doc, user])
 
-  // Tự động cuộn lên đầu trang & cập nhật tiêu đề trang theo tài liệu
+  // Tự động cuộn lên đầu trang & cập nhật tiêu đề trang, meta description theo tài liệu
   useEffect(() => {
     window.scrollTo(0, 0)
+    const defaultTitle = 'Tài Liệu Kế Toán FDI Miễn Phí 2026 — Biểu Mẫu, Checklist | AZTAX'
+    const metaDesc = document.querySelector('meta[name="description"]')
+    const defaultDesc =
+      'Kho tài liệu kế toán FDI miễn phí 2026 cho doanh nghiệp có vốn đầu tư nước ngoài tại Việt Nam. Tải trọn bộ biểu mẫu thuế, checklist pháp lý, báo cáo đầu tư chuẩn xác từ AZTAX.'
+
     if (doc?.title) {
-      document.title = `${doc.title} — Thư viện AZTAX FDI`
+      document.title = `${doc.title} — Tài liệu kế toán FDI 2026 | AZTAX`
+      if (metaDesc) {
+        const descSnippet = (doc.description || '').replace(/\s+/g, ' ').trim()
+        metaDesc.setAttribute(
+          'content',
+          `Tải ${doc.title} miễn phí. ${descSnippet ? `${descSnippet} — ` : ''}Tài liệu kế toán FDI cập nhật mới nhất 2026 từ AZTAX.`
+        )
+      }
     }
+
     return () => {
-      document.title = 'AZTAX — Kho tài liệu kế toán FDI miễn phí 2026'
+      document.title = defaultTitle
+      if (metaDesc) {
+        metaDesc.setAttribute('content', defaultDesc)
+      }
     }
   }, [id, doc])
 

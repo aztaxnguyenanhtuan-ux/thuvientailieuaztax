@@ -11,7 +11,7 @@ export default function InfographicPage() {
     window.scrollTo(0, 0)
     document.title = 'Infographic Kế toán & Thuế FDI 2026 — AZTAX'
     return () => {
-      document.title = 'AZTAX — Kho tài liệu kế toán FDI miễn phí 2026'
+      document.title = 'Tài Liệu Kế Toán FDI Miễn Phí 2026 — Biểu Mẫu, Checklist | AZTAX'
     }
   }, [])
 

@@ -101,8 +101,8 @@ export default function DocumentFilter({
     <section className="section" id="kho-tai-lieu">
       <div className="container">
         <div className="section-head">
-          <span className="eyebrow">Kho tài liệu</span>
-          <h2>Chọn nhóm tài liệu phù hợp với bạn</h2>
+          <span className="eyebrow">Kho tài liệu FDI</span>
+          <h2>Danh mục tài liệu kế toán FDI theo chuyên đề</h2>
           <p>
             Biên soạn chuyên biệt theo quy định kế toán, thuế và pháp lý FDI mới
             nhất năm 2026.

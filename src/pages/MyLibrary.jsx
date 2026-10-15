@@ -10,9 +10,9 @@ export default function MyLibrary() {
 
   useEffect(() => {
     window.scrollTo(0, 0)
-    document.title = 'Tài liệu đã lưu — Thư viện AZTAX FDI'
+    document.title = 'Tài liệu đã lưu — Thư viện Kế toán FDI | AZTAX'
     return () => {
-      document.title = 'AZTAX — Kho tài liệu kế toán FDI miễn phí 2026'
+      document.title = 'Tài Liệu Kế Toán FDI Miễn Phí 2026 — Biểu Mẫu, Checklist | AZTAX'
     }
   }, [])
 

@@ -1,57 +1,163 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Trang chủ & chuyên mục chính -->
   <url>
     <loc>https://tailieu.aztax.com.vn/</loc>
+    <lastmod>2026-10-15</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://tailieu.aztax.com.vn/infographic</loc>
+    <lastmod>2026-10-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
-  <url>
-    <loc>https://tailieu.aztax.com.vn/thu-vien</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
+
+  <!-- Tài liệu kế toán FDI cốt lõi -->
   <url>
     <loc>https://tailieu.aztax.com.vn/tai-lieu/cap-nhat-thay-doi-thue-tndn</loc>
+    <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://tailieu.aztax.com.vn/tai-lieu/cap-nhat-thay-doi-thue-tncn</loc>
+    <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://tailieu.aztax.com.vn/tai-lieu/checklist-phap-ly-doanh-nghiep-fdi-moi-thanh-lap</loc>
+    <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://tailieu.aztax.com.vn/tai-lieu/huong-dan-bao-cao-khoan-vay-nuoc-ngoai</loc>
+    <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://tailieu.aztax.com.vn/tai-lieu/chuyen-loi-nhuan-ra-nuoc-ngoai</loc>
+    <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://tailieu.aztax.com.vn/tai-lieu/Bao-hiem-xa-hoi</loc>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/bao-hiem-xa-hoi</loc>
+    <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://tailieu.aztax.com.vn/tai-lieu/Kinh-phi-cong-doan</loc>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/kinh-phi-cong-doan</loc>
+    <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://tailieu.aztax.com.vn/tai-lieu/Giam-tru-gia-canh</loc>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/giam-tru-gia-canh</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Tài liệu kế toán thuế & biểu mẫu chi tiết -->
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-checklist-phap-ly-fdi</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-tong-quan-thue-gtgt</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-cap-nhat-thue-tndn</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-bao-cao-giam-sat</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-tai-khoan-von</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-thue-tncn-tong-quan</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-thue-tndn-tong-quan</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-thue-nha-thau</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-quyet-toan-tncn</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-xu-ly-truy-thu</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-rui-ro-transfer-pricing</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-sai-sot-fct</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-giao-dich-lien-ket</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-uu-dai-tndn-sai</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-mau-01-ntnn</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tailieu.aztax.com.vn/tai-lieu/doc-mien-thue-tndn-sme</loc>
+    <lastmod>2026-10-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
